@@ -2,19 +2,30 @@
 <script>
   function firstConnect() {
     const bsOffcanvas = new bootstrap.Offcanvas("#offcanvasNavbar");
-    for (let i = 1; i <= 6; i++) {
-      $("#page" + i + "_menu").on("click", function () {
-        bsOffcanvas.hide();
-        $("#page" + i).removeClass("d-none");
-        $(".menu-bar:not(#page" + i + ")").addClass("d-none");
-      });
+    const getCurrent_page = localStorage.getItem("current_page");
 
-      if (i != 4 || i != 5) {
-        $("#page" + i + "_menu").on("click", function () {
-          $("#setOrEditProduct_div").addClass("d-none");
-        });
-      }
-    }
+    // // แสดงหน้าปัจจุบัน
+    // if(getCurrent_page) {
+    //   const current_page = $(getCurrent_page).index();
+    //   console.log(current_page)
+    //   $(".page").eq(current_page+1).removeClass("d-none");
+    //   $(".page:not(:eq("+ current_page+1 +"))").addClass("d-none");
+    // };
+
+    // ซ่อนและแสดงหน้า
+    $(".page-menu").on("click", function () {
+      bsOffcanvas.hide();
+      localStorage.setItem("current_page",  `#${$(this).attr("id").replace("_menu", "")}`);
+      let page = $(this).index();
+      $(".page").eq(page).removeClass("d-none");
+      $(".page:not(:eq("+ page +"))").addClass("d-none");
+
+      if (page+1 != 4 || page+1 != 5) {
+        $("#setOrEditProduct_div").addClass("d-none");
+      } else {
+        $("#setOrEditProduct_div").removeClass("d-none");
+      };
+    });
 
     const usernameLC = localStorage.getItem("username");
     const passwordLC = localStorage.getItem("password");
@@ -22,15 +33,15 @@
 
     $("#AdminEdit_form").val(usernameLC);
     $("#welcome").html(`ยินดีต้อนรับคุณ ${usernameLC} สิทธิการใช้งาน ${rootLC}`);
-
+    
     root_protection(); // กำหนดขอบเขตการปฏิบัติงาน
 
     // สร้าง DropdownList รายการผลิตทั้งหมดที่ endjob ไปแล้ว
     loadingStart("กำลังโหลด", $("#selectedMenu_ipc").parent());
     loadingStart("กำลังโหลด", $("#selectedMenu_room").parent());
-    google.script.run.withSuccessHandler((res) => {
-      loadingEnd($("#selectedMenu_ipc").parent());
-      loadingEnd($("#selectedMenu_room").parent());
+    google.script.run.withSuccessHandler((res)=>{
+      loadingEnd($("#selectedMenu_ipc").parent()); 
+      loadingEnd($("#selectedMenu_room").parent()); 
       createDropdownList_allSheet(res);
     }).getAllSheet(rootLC);
 
@@ -59,232 +70,163 @@
 <script>
   function root_protection() {
     const rootLC = localStorage.getItem("root");
-    if (rootLC == "Superuser") {
+    if(rootLC == "Admin") {
+      auditTrail_record(); // แสดงข้อมูลรายละเอียดการปฏิบัติงาน
       updateSettingList(); // สร้าง DropdownList สำหรับการตั้งค่าทั้งหมด
       recordTableDetail_IPC(); // ลงบันทึกลักษณะของเม็ดยา
-      root_remarks();
-      root_addChecker(); // ลงชื่อผู้ปฏิบัติงาน
-      root_detail_room();
-      root_addThickness();
-      root_editThickness();
-      $(".root-superuser").removeClass("d-none");
-    } else if (rootLC == "Admin") {
+      root_remarks(); // ลงข้อมูล remarks
+      root_addChecker(); // ลงชื่อผู้ตรวจเช็ค
+      recordTableDetail_ROOM(); // ลงรายละเอียดของเม็ดยา
+      // root_addThickness(); // ลงค่าความแข็งของเม็ดยา
+      // root_editThickness(); // แก้ไขค่าความแข็งของเม็ดยา
+      $(".root-admin").removeClass("d-none"); // แสดงเมนูตาม class root-admin
+    } else if(rootLC == "Superuser") {
+      auditTrail_record(); // แสดงข้อมูลรายละเอียดการปฏิบัติงาน
       updateSettingList(); // สร้าง DropdownList สำหรับการตั้งค่าทั้งหมด
       recordTableDetail_IPC(); // ลงบันทึกลักษณะของเม็ดยา
-      root_remarks();
-      root_addChecker(); // ลงชื่อผู้ปฏิบัติงาน
-      root_detail_room();
-      root_addThickness();
-      root_editThickness();
-      $(".root-admin").removeClass("d-none");
-    } else if (rootLC == "Operator") {
+      root_remarks(); // ลงข้อมูล remarks
+      root_addChecker(); // ลงชื่อผู้ตรวจเช็ค
+      recordTableDetail_ROOM(); // ลงรายละเอียดของเม็ดยา
+      // root_addThickness(); // ลงค่าความแข็งของเม็ดยา
+      $(".root-superuser").removeClass("d-none"); // แสดงเมนูตาม class root-superuser   
+    } else if(rootLC == "Operator") {
       recordTableDetail_IPC(); // ลงบันทึกลักษณะของเม็ดยา
-      root_addThickness();
-      root_detail_room();
-      $(".root-superuser").addClass("d-none");
-      $(".root-admin").addClass("d-none");
+      recordTableDetail_ROOM(); // ลงรายละเอียดของเม็ดยา
+      // root_addThickness(); // ลงค่าความแข็งของเม็ดยา
+      $(".root-superuser").addClass("d-none"); // ซ่อนเมนูตาม class root-superuser
+      $(".root-admin").addClass("d-none"); // ซ่อนเมนูตาม class root-admin
     } else {
-      $(".root-superuser").addClass("d-none");
-      $(".root-admin").addClass("d-none");
-    };
+      $(".root-superuser").addClass("d-none"); // ซ่อนเมนูตาม class root-superuser
+      $(".root-admin").addClass("d-none"); // ซ่อนเมนูตาม class root-admin
+    };    
   };
-
-  // refresh page, endjob
-  $(document).ready(function () {
-    // refresh page
-    $("body").on("click", ".reloadTable", function () {
-      const el = $(this);
-      const id = el.attr("id");
-      const url = el.attr("name")
-      el.find("i").addClass("fa-spin");
-
-      if (id == "reloadTable_ipc") {
-        google.script.run.withSuccessHandler((res) => {
-          el.find("i").removeClass("fa-spin");
-          createTable_IPC(res);
-        }).getCurrentData_IPC(url);
-      } else if (id == "reloadTable_room") {
-        google.script.run.withSuccessHandler((res) => {
-          el.find("i").removeClass("fa-spin");
-          createTable_ROOM(res);
-        }).getCurrentData_ROOM(url);
-      };
-    });
-
-    // endjob
-    $("body").on("click", ".endjob", function () {
-      const el = $(this);
-      const type = el.attr("id");
-      const url = el.attr("name")
-      const username = localStorage.getItem("username");
-      el.find("i").addClass("fa-bounce");
-      endjob(type, url, username, el);
-    });
-
-    function endjob(type, url, username, element) {
-      Swal.fire({
-        title: 'สิ้นสุดการตอกยาเม็ด',
-        text: "เก็บเอกสารและเคลียร์ข้อมูล",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'ยืนยัน, เคลียร์ข้อมูล!'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          if (type == "endjob_ipc") {
-            google.script.run.withSuccessHandler((res) => {
-              element.find("i").removeClass("fa-bounce");
-              // createTable_IPC(res);
-            }).withFailureHandler(failed).endJob_IPC(url, username);
-          } else if (type == "endjob_room") {
-            google.script.run.withSuccessHandler((res) => {
-              element.find("i").removeClass("fa-bounce");
-              // createTable_ROOM(res);
-            }).withFailureHandler(failed).endJob_ROOM(url, username);
-          };
-        };
-      });
-    };
-  });
 </script>
-
+  
 <!-- สร้างกราฟ-->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js"></script>
+<script type="text/javascript" src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
 <script>
   function createChart(timestamp, percentag) {
-    _labels = timestamp;
-    _datasets = percentag;
+    let dataPoints = timestamp.map(function(value, index) {
+      return {y: parseFloat(percentag[index]), label: value };
+    });
 
-    const config = {
-      responsive: true,
-      plugins: {
-        title: {
-          display: true,
-          text: "Control Chart (%)",
-          font: {
-            size: 18,
-          },
-        },
-      },
-      interaction: {
-        intersect: false,
-      },
-      scales: {
-        y: {
-          suggestedMin: 95,
-          suggestedMax: 105,
-        },
-      },
-    };
-
-    $("#chartJS").html('<canvas id="line-chart" width="800" height="450"></canvas>');
+    $("#chartJS").html('<div id="chartContainer" class="my-5" style="height: 380px; width: 100%;"></div>');
     $(document).ready(function () {
-      // รับความกว้างและความสูงของหน้าจอ
-      let screenWidth =
-        window.innerWidth ||
-        document.documentElement.clientWidth ||
-        document.body.clientWidth;
-      let screenHeight =
-        window.innerHeight ||
-        document.documentElement.clientHeight ||
-        document.body.clientHeight;
-
-      // กำหนดค่าความกว้างและความสูงของ canvas เป็นค่าของหน้าจอ
-      let canvas = document.getElementById("line-chart");
-      canvas.width = screenWidth;
-      canvas.height = (screenHeight * 70) / 100;
-
-      new Chart(document.getElementById("line-chart"), {
-        type: "line",
-        data: {
-          labels: _labels,
-          datasets: [
-            {
-              data: _datasets,
-              label: "Percentag",
-              borderColor: "#3e95cd",
-              fill: false,
-              cubicInterpolationMode: "monotone",
-              tension: 0.4,
-              borderWidth: 2.5,
-              radius: 2,
-            },
-          ],
+      let chart = new CanvasJS.Chart("chartContainer", {
+        animationEnabled: true,
+        animationDuration: 2000,
+        zoomEnabled: true,
+        // exportEnabled: true,
+        title:{
+          text: "Control Chart (%)",
+          fontSize: 22
         },
-        options: config,
+        toolTip: {
+          shared: "true",
+          cornerRadius: 5
+        },
+        axisX:{
+          labelMaxWidth: 60,
+          labelWrap: true,   // change it to false
+          labelAngle: 0,
+          labelTextAlign: "center",
+          labelAutoFit: false,
+          labelFontSize: 11
+        },
+        axisY:{
+          labelFontSize: 12
+        },
+        data: [
+          { 
+            yValueFormatString: "#.000 เปอร์เซนต์",
+            type: "spline",
+            color: "#3e95cd",
+            showInLegend: true,
+            name: $("#selectedMenu_room").val(),
+            markerSize: 8,
+            markerBorderColor: "red",
+            dataPoints: dataPoints
+          }
+        ]
       });
-    })
-  }
+      chart.render();
+
+    });      
+  };
 </script>
 
 <!-- สร้างตารางน้ำหนัก IPC -->
 <script>
   function createTable_IPC(dataObj) {
+    let weight_temp_ipc = []; // เก็บค่าน้ำหนักที่อยู่ในเกณฑ์เพื่อไปทำสรุปข้อมูล
     let setup = dataObj.setupWeightIPC;
-    let dataTableWeight = `
-            <h4 class="text-center mt-5 fw-bolder text-decoration-underline">
-              รายละเอียด
-            </h4>
-            <div class="d-flex justify-content-center gap-3 m-3">
-              <button class="btn btn-secondary reloadTable px-5"
-                id="reloadTable_ipc" type="button"
-                name="${dataObj.url}">
-                <i class="fa-solid fa-arrows-rotate"></i> อัพเดทข้อมูล
-              </button>
-              <button class="btn btn-danger endjob px-5 root-admin root-superuser"
-                id="endjob_ipc" type="button"
-                name="${dataObj.url}">
-                <i class="fa-solid fa-cloud-arrow-up"></i> จบการผลิต
-              </button>
-            </div>
-            <div class="d-grid gap-2 col-12 justify-content-center">
-              <ul>
-                <li class="lh-lg">ชื่อยา ${setup[2]}</li>
-                <li class="lh-lg">เลขที่ผลิต ${setup[4]}</li>
-                <li class="lh-lg">เครื่องชั่งหมายเลข ${setup[1]}</li>
-                <li class="lh-lg">เครื่องตอก ${setup[0]}</li>
-                <li class="lh-lg">จำนวนสาก ${setup[3]} สาก</li>
-                <li class="lh-lg">จำนวนเม็ดที่ต้องชั่ง ${setup[5]} เม็ด</li>
-                <li class="lh-lg">น้ำหนักตอก/เม็ด ${setup[6]} กรัม</li>
-                <li class="lh-lg">% ช่วงน้ำหนักเบี่ยงเบนที่ยอมรับ ${setup[7]}</li>
-                <li class="lh-lg">ช่วงน้ำหนักเฉลี่ยที่ยอมรับ ${setup[8]} - ${setup[9]} กรัม</li>
-                <li class="lh-lg">ช่วงน้ำหนักเบี่ยงเบนที่ยอมรับ ${setup[10]} - ${setup[11]} กรัม
-                </li>
-              </ul>
-            </div>`;
+    let detail = `
+          <h4 class="text-center mt-5 fw-bolder text-decoration-underline">
+            รายละเอียด
+          </h4>
+          <div class="d-flex justify-content-center gap-3 m-3">
+            <button class="btn btn-secondary reloadTable px-5"
+              id="reloadTable_ipc" type="button"
+              name="${dataObj.url}">
+              <i class="fa-solid fa-arrows-rotate"></i> อัพเดทข้อมูล
+            </button>
+            <button class="btn btn-danger endjob px-5 root-admin root-superuser d-none"
+              id="endjob_ipc" type="button"
+              name="${dataObj.url}">
+              <i class="fa-solid fa-cloud-arrow-up"></i> จบการผลิต
+            </button>
+          </div>
+          <div class="d-grid gap-2 col-12 justify-content-center setting-list-detail">
+            <ul>
+              <li class="lh-lg product-name">ชื่อยา ${setup[2]}</li>
+              <li class="lh-lg lot-name">เลขที่ผลิต ${setup[4]}</li>
+              <li class="lh-lg">เครื่องชั่งหมายเลข ${setup[1]}</li>
+              <li class="lh-lg tablet-name">เครื่องตอก ${setup[0]}</li>
+              <li class="lh-lg">จำนวนสาก ${setup[3]} สาก</li>
+              <li class="lh-lg">จำนวนเม็ดที่ต้องชั่ง ${setup[5]} เม็ด</li>
+              <li class="lh-lg">น้ำหนักตอก/เม็ด ${setup[6]} กรัม</li>
+              <li class="lh-lg">% ช่วงน้ำหนักเบี่ยงเบนที่ยอมรับ ${setup[7]}</li>
+              <li class="lh-lg">ช่วงน้ำหนักเฉลี่ยที่ยอมรับ ${setup[8]} - ${setup[9]} กรัม</li>
+              <li class="lh-lg">ช่วงน้ำหนักเบี่ยงเบนที่ยอมรับ ${setup[10]} - ${setup[11]} กรัม</li>
+              <li class="lh-lg">ช่วงน้ำหนักเบี่ยงเบนที่กฎหมายยอมรับ ${setup[12]} - ${setup[13]} กรัม</li>
+              ${setup[15]=="xxxxx"?"":`<li class="lh-lg">${setup[15]}</li>`}
+              </li>
+            </ul>
+          </div>
+          <div class="summary-ipc d-grid justify-content-center">
+          </div>`;
 
     // สร้างตาราง
-    let mainSlideDiv = '<div id="main_container_ipc" class="mt-3 mb-3 div-zone">';
+    let dataTableWeight = '<div id="main_container_ipc" class="mt-3 mb-3 div-zone">';
     let slidActiveDiv = `<div class="slide-div">
-                  <div class="slide active">
-                      <div class="d-flex gap-4 justify-content-center">`;
+                <div class="slide active">
+                    <div class="d-flex gap-4 justify-content-center">`;
 
     let total_page = 0;
     let slidActiveDiv_check = false;
-    for (let i = 0; i < dataObj.result.length; i++) {
+    for(let i = 0; i < dataObj.result.length; i++){  
       let slideDiv = `<div class="slide">
-                  <div class="d-flex gap-4 justify-content-center">`;
+                <div class="d-flex gap-4 justify-content-center">`;
 
       let dataArray = dataObj.result[i];
 
-      let firstTable = createTable(dataArray.shName, dataArray.data, dataArray.colors, dataArray.dataSummary, dataArray.colorsSummary);
-      dataArray = dataObj.result[i + 1];
-      let secondTable = createTable(dataArray.shName, dataArray.data, dataArray.colors, dataArray.dataSummary, dataArray.colorsSummary);
+      let firstTable = createTable(dataArray, dataObj.setupWeightIPC);
+      dataArray = dataObj.result[i+1];
+      let secondTable = createTable(dataArray, dataObj.setupWeightIPC);
 
-      if (!slidActiveDiv_check) {
-        firstTable ? slidActiveDiv += firstTable : null;
-        secondTable ? slidActiveDiv += secondTable : null;
-        if (firstTable || secondTable) {
+      if(!slidActiveDiv_check){
+        firstTable ? slidActiveDiv += firstTable: null;
+        secondTable ? slidActiveDiv += secondTable: null;
+        if(firstTable || secondTable) {
           slidActiveDiv += '</div></div>';
           slidActiveDiv_check = true;
           total_page++;
         }
       }
-      else {
+      else {            
         firstTable ? slideDiv += firstTable : null;
-        secondTable ? slideDiv += secondTable : null;
-        if (firstTable || secondTable) {
+        secondTable ? slideDiv += secondTable : null;          
+        if(firstTable || secondTable) {
           slideDiv += '</div></div>';
           slidActiveDiv += slideDiv;
           total_page++;
@@ -295,53 +237,46 @@
 
     };
 
+    // ปุ่มแสดงหน้าตาราง
     let slideControlDiv = `<div class="slide-controls d-flex justify-content-center gap-5">
-                  <ul class="pagination">
-                      <li class="paginate_button page-item previous" id="previous">
-                          <a aria-disabled="true" aria-role="link" data-dt-idx="previous" tabindex="0"
-                              class="page-link">ก่อนหน้า</a>
-                      </li>
-                      <li class="paginate_button page-item next" id="next">
-                          <a aria-controls="WeightIPC" aria-role="link" data-dt-idx="next" tabindex="0"
-                              class="page-link">ถัดไป</a>
-                      </li>
-                  </ul>
-                  <div>
-                      <p class="mt-2 mx-2">หน้า <span id="current_page">1</span> จาก ${total_page} หน้า</p>
-                  </div>
-              </div>`;
+                <ul class="pagination">
+                    <li class="paginate_button page-item previous" id="previous">
+                        <a aria-disabled="true" aria-role="link" data-dt-idx="previous" tabindex="0"
+                            class="page-link">ก่อนหน้า</a>
+                    </li>
+                    <li class="paginate_button page-item next" id="next">
+                        <a aria-controls="WeightIPC" aria-role="link" data-dt-idx="next" tabindex="0"
+                            class="page-link">ถัดไป</a>
+                    </li>
+                </ul>
+                <div>
+                    <p class="mt-2 mx-2">หน้า <span id="current_page">
+                      ${total_page ? "1":"0"}</span> จาก ${total_page} หน้า</p>
+                </div>
+            </div>`;
 
     slidActiveDiv += "</div>";
-    mainSlideDiv += slidActiveDiv;
-    mainSlideDiv += slideControlDiv;
-    dataTableWeight += mainSlideDiv + "</div>";
+    dataTableWeight += slidActiveDiv;
+    dataTableWeight += slideControlDiv;
+    dataTableWeight += "</div>";
 
     // สร้างตาราง Remarks
     let dataTableRemarks = `<table id="weight_ipc_remarks" 
-            class="remarks table table-striped table-responsive mt-5" style="width: 100%">
-          <thead class='p-3 mb-2 bg-primary text-white'>
-            <tr>
-              <th colspan="6" style="font-size: 18px; position: relative;">Remarks
-                <button type="button" class="btn btn-warning add-remarks px-3 root-admin root-superuser" 
-                  style="position: absolute; top: 3px; right: 10px;">
-                  <i class="fa-solid fa-plus"></i>
-                    ADD
-                </button>
-              </th>    
-            </tr>
-            <tr>
-                <th scope="col">วันที่/เวลา</th>
-                <th scope="col">เหตุการที่เกิดการเปลี่ยนแปลง</th>
-                <th scope="col">สาเหตุ</th>
-                <th scope="col">การแก้ไข</th>
-                <th scope="col">หมายเหตุ</th>
-                <th scope="col">ผู้บันทึก</th>      
-            </tr>
-          </thead>`;
+          class="remarks table table-striped table-responsive" style="width: 100%">
+        <thead class='p-3 bg-primary text-white'>
+          <tr>
+              <th scope="col">วันที่/เวลา</th>
+              <th scope="col">เหตุการที่เกิดการเปลี่ยนแปลง</th>
+              <th scope="col">สาเหตุ</th>
+              <th scope="col">การแก้ไข</th>
+              <th scope="col">หมายเหตุ</th>
+              <th scope="col">ผู้บันทึก</th>      
+          </tr>
+        </thead>`;
 
     dataTableRemarks += '<tbody>';
 
-    if (dataObj.remarks.length > 0) {
+    if(dataObj.remarks.length > 0) {
       dataObj.remarks.forEach(dataArr => {
         dataTableRemarks += '<tr>';
         dataArr.forEach(data => {
@@ -349,65 +284,153 @@
         });
         dataTableRemarks += '</tr>';
       });
-    }
-    // else {
-    //   dataTableRemarks += '<tr><td colspan="4" class="text-center">***** ยังไม่มีข้อมูล *****</td></tr>';
-    // }
-
+    };
+    
     dataTableRemarks += '</tbody></table>';
 
+    let check_data = false; // ตรวจสอบว่ามีข้อมูลน้ำหนักยาหรือไม่
+    if(total_page > 0) { check_data = true };
+
+    $("#weight_detail_ipc").html(detail); // ข้อมูลการตั้งค่าน้ำหนัก ipc
     $("#weight_ipc_div").html(dataTableWeight); // สร้างตารางน้ำหนัก ipc
     $("#remarks_ipc_div").html(dataTableRemarks); // สร้างตาราง remarks
+    $("#remarks_ipc_div").parents(".table-div-ipc").find(".table-title-remarks").removeClass("d-none");
+    
+    // สรุปผลการชั่งน้ำหนัก
+    $(document).ready(function () {
+      if(weight_temp_ipc) {
+        let summary_min = Math.min(...weight_temp_ipc);
+        let summary_max = Math.max(...weight_temp_ipc);
+        let summary_average = (weight_temp_ipc.reduce((acc, val) => acc + parseFloat(val), 0) / weight_temp_ipc.length).toFixed(3);
+        $(".summary-ipc").html(`<h5 class="text-center lh-lg bg-success py-2 px-5 text-white rounded">
+            <span class="fw-semibold text-decoration-underline">สรุปข้อมูลการชั่งน้ำหนักทั้งหมด</span>
+            <div class="d-flex justify-content-between gap-5">
+              <span>ต่ำสุด ${summary_min} กรัม</span>
+              <span>สูงสุด ${summary_max} กรัม</span>
+              <span>เฉลี่ย ${summary_average} กรัม</span>
+            </div>
+          </h5>`
+        );
 
-    // กำหนดสิทธิ์การใช้งาน
-    const root = localStorage.getItem("root");
-    console.log(root)
-    if (root != "Superuser" && root != "Admin") {
-      $(".root-superuser").addClass("d-none");
-      $(".root-admin").addClass("d-none");
-    };
+        google.script.run.summaryRecord_IPC(dataObj.url, summary_min, summary_max, summary_average); // บันทึกสรุปข้อมูลการชั่งน้ำหนัก
+      };
+    });
+    
+    const usernameLC = localStorage.getItem("username"); // ชื่อผู้ใช้งาน
+    const rootLC = localStorage.getItem("root"); // สิทธิ์การใช้งาน
+    $(document).ready(function () {
+      // มีข้อมูลน้ำหนัก
+      if(check_data) {
+        $(".table-div-ipc").removeClass("d-none");
+
+        // กำหนดสิทธิ์การใช้งาน
+        if(rootLC == "Superuser" || rootLC == "Admin") {
+          if(rootLC == "Superuser") {
+            $(".root-superuser").removeClass("d-none");
+          } else if(rootLC == "Admin") {
+            $(".root-admin").removeClass("d-none");
+          };   
+          // endjob แสดงเฉพาะ lot ปัจจุบัน
+          if($("#selectedMenu_ipc").val().includes("เครื่องตอก")) {
+            $("#endjob_ipc").removeClass("d-none");
+            $(".add-remarks").removeClass("d-none");
+          } else {
+            $("#endjob_ipc").addClass("d-none");
+            $(".add-remarks").addClass("d-none");
+          };
+        } else {
+          $(".root-superuser").addClass("d-none");
+          $(".root-admin").addClass("d-none");
+        };
+      }
+      else {
+        $("#endjob_ipc").addClass("d-none");
+        $(".table-div-ipc").addClass("d-none");
+      };
+    });
+
+    // สร้าง dropdown list ลักษณะเม็ดยา
+    $(document).ready(function () {
+      let element = $('.WeightIPC .tablet-detail-ipc');
+      let dropdown = $('<select>').addClass('tablet-detail-ipc data-control');
+      let listname = $("#selectedMenu_ipc").val().includes("เครื่องตอก");
+
+      if(rootLC != "User" && listname) {
+        $.each(list_datail, function(index, item) {
+            let option = $('<option>').val(item).text(item);
+            dropdown.append(option);
+        });
+
+        element.replaceWith(dropdown);
+      };
+ 
+      element.each(function(index, el) {
+        let optionEl = $('body .WeightIPC .tablet-detail-ipc');
+        const username = optionEl.eq(index).parents("tbody").find(".tablet-operator-ipc").html();
+        const val = $(el).text();   
+        optionEl.eq(index).val(val);
+        optionEl.eq(index).css("background-color",color_datail[list_datail.indexOf(val)]);    
+
+        if(val != 'ไม่ระบุ' || username != usernameLC) {
+          optionEl.eq(index).prop('disabled', true);
+        }; 
+      });
+    });
 
     addSlideEvent(); // เพิ่ม slide event
+    
+    function createTable(data, setting) {
+      let sheet = data.shName,
+          dataArray = data.data,
+          colors = data.colors,
+          dataSummary = data.dataSummary,
+          colorsSummary = data.colorsSummary;
 
-    function createTable(sheet, dataArray, colors, dataSummary, colorsSummary) {
+      let dateTime = dataArray[0][0]
       let table_temp = `<table class="WeightIPC table table-striped table-responsive" style="width: 100%">
-                          <thead class="p-3 mb-2 bg-primary text-white">
-                              <tr>
-                                  <!-- <th rowspan="2">วันที่,เวลา</th> -->
-                                  <th colspan="5" style="font-size: 18px">
-                                      ตารางข้อมูลน้ำหนักยา
-                                  </th>
-                              </tr>
-                              <tr>
-                                  <th colspan="2" class="date-time-ipc">${dataArray[0][0]}</th>
-                              </tr>
-                              <tr>
-                                  <th scope="col" class="title-ipc">เวลา</th>
-                                  <th scope="col" class="title-ipc">น้ำหนัก (g.)</th>
-                          </thead>`;
+                        <thead class="p-3 mb-2 bg-primary text-white">
+                            <tr>
+                                <!-- <th rowspan="2">วันที่,เวลา</th> -->
+                                <th colspan="5" style="font-size: 18px">
+                                    ตารางข้อมูลน้ำหนักยา
+                                </th>
+                            </tr>
+                            <tr>
+                                <th colspan="2" class="date-time-ipc">${dateTime}</th>
+                            </tr>
+                            <tr>
+                                <th scope="col" class="title-ipc">เวลา</th>
+                                <th scope="col" class="title-ipc">น้ำหนัก (g.)</th>
+                        </thead>`;
 
       table_temp += '<tbody>';
 
-      let dateTime = dataArray[0][0]
+      let min_control = setting[10];
+      let max_control = setting[11];
+
       if (dateTime) {
-        dataArray.forEach((data, item) => {
-          let start = 2, end = parseInt(dataSummary[3][1]) + 2;
-          if (item >= start && item < end) {
+        dataArray.forEach((data, item)=> {
+          let start = 2, end = parseInt(dataSummary[3][1])+2;
+          if(item >= start && item < end) {        
             table_temp += `<tr>
-                                  <td>
-                                    <div class="data-control" 
-                                      style="background-color:${colors[item][0]}">
-                                      ${data[0]}
-                                    </div>
-                                  </td>
-                                  <td>
-                                    <div class="data-control" 
-                                      style="background-color:${colors[item][1]}">
-                                      ${data[1]}
-                                    </div>
-                                  </td>
-                              </tr>`;
-          }
+                                <td>
+                                  <div class="data-control" 
+                                    style="background-color:${colors[item][0]}">
+                                    ${data[0]}
+                                  </div>
+                                </td>
+                                <td>
+                                  <div class="data-control" 
+                                    style="background-color:${colors[item][1]}">
+                                    ${data[1]}
+                                  </div>
+                                </td>
+                            </tr>`;
+          };
+
+          if(data[1] >= min_control && data[1] <= max_control) {
+            weight_temp_ipc.push(data[1]);
+          };
         });
       }
       else {
@@ -415,341 +438,59 @@
       }
 
       table_temp += `<tr>
-                      <td class="summary">น้ำหนักเฉลี่ยที่ได้ (g)</td>
-                      <td class="summary">
-                        <div class="data-control" 
-                            style="background-color:${colorsSummary[0][1]}">
-                            ${dataSummary[0][1]}
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td colspan="2" class="summary">ช่วงน้ำหนักเบี่ยงเบนที่ได้</td>
-                    </tr>
-                    <tr>
-                      <td class="summary">
-                        <div class="data-control" 
-                            style="background-color:${colorsSummary[2][0]}">
-                            ${dataSummary[2][0]}
-                        </div>
-                      </td>
-                      <td class="summary">
-                        <div class="data-control" 
-                            style="background-color:${colorsSummary[2][1]}">
-                            ${dataSummary[2][1]}
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td class="summary">จำนวน (เม็ด)</td>
-                      <td class="summary">${dataSummary[3][1]}</td>
-                    </tr>
-                    <tr>
-                      <td class="summary">ลักษณะเม็ด</td>
-                      <td class="summary">
-                        <div class="data-control tablet-detail-ipc bg-secondary" name="${sheet}">
-                            ${dataSummary[4][1] ? dataSummary[4][1] : "ไม่ระบุ"}
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td class="summary">ผู้บันทึกข้อมูล</td>
-                      <td class="summary">${dataSummary[7][1]}</td>
-                    </tr>             
-                </tbody>
-            </table>`;
-
+                    <td class="summary">น้ำหนักเฉลี่ยที่ได้ (g)</td>
+                    <td class="summary">
+                      <div class="data-control" 
+                          style="background-color:${colorsSummary[0][1]}">
+                          ${dataSummary[0][1]}
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" class="summary">ช่วงน้ำหนักเบี่ยงเบน</td>
+                  </tr>
+                  <tr>
+                    <td class="summary">
+                      <div class="data-control" 
+                          style="background-color:${colorsSummary[2][0]}">
+                          ${dataSummary[2][0]}
+                      </div>
+                    </td>
+                    <td class="summary">
+                      <div class="data-control" 
+                          style="background-color:${colorsSummary[2][1]}">
+                          ${dataSummary[2][1]}
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="summary">จำนวน (เม็ด)</td>
+                    <td class="summary">${dataSummary[3][1]}</td>
+                  </tr>
+                  <tr>
+                    <td class="summary">ลักษณะเม็ด</td>
+                    <td class="summary" name="${sheet}">
+                      <div class="data-control tablet-detail-ipc"
+                      >${dataSummary[4][1] ? dataSummary[4][1]: "ไม่ระบุ"}</div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="summary">ผู้บันทึกข้อมูล</td>
+                    <td class="summary tablet-operator-ipc">${dataSummary[7][1]}</td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" class="summary">
+                      <div class="data-control" style="background-color:${colorsSummary[8][1]}">
+                        ${dataSummary[8][1]}
+                      </div>
+                    </td>
+                  </tr>              
+              </tbody>
+          </table>`;
+      
       return table_temp;
     };
   }; 
-</script>
-
-<!-- สร้างตารางน้ำหนัก 10 เม็ด -->
-<script>
-  let dataTable_room;
-  let color_datail = ["#6c757d", "#34a853", "#ff0000"];
-  let list_datail = ["ไม่ระบุ", "ปกติ", "ผิดปกติ"];
-
-  let setupTable = {
-    // กำหนดเมนูแสดงจำนวนแถว
-    lengthMenu: [
-      [5, 10, 15, 20, 50, 100, -1],
-      ["5", "10", "15", "20", "50", "100", "ทั้งหมด"],
-    ],
-
-    // order: [[6, 'desc']],
-    ordering: false,
-    iDisplayLength: 10,
-    responsive: true,
-
-    //ภาษาไทย
-    language: {
-      sLengthMenu: "แสดง _MENU_ รายการ",
-      sZeroRecords: "ไม่พบข้อมูล",
-      sInfo: "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
-      sInfoEmpty: "แสดง 0 ถึง 0 จาก 0 รายการ",
-      sInfoFiltered: "(กรองข้อมูลจาก _MAX_ รายการ)",
-      sInfoPostFix: "",
-      sSearch: "ค้นหา:",
-      sUrl: "",
-      oPaginate: {
-        sFirst: "หน้าแรก",
-        sPrevious: "ก่อนหน้า",
-        sNext: "ถัดไป",
-        sLast: "หน้าสุดท้าย",
-      },
-    },
-  };
-
-  function createTable_ROOM(dataObj) {
-    if (dataObj.result == false) {
-      Swal.fire({
-        icon: 'error',
-        title: 'เกิดข้อผิดพลาด',
-        text: 'ไม่สามารถแสดงไฟล์ได้เนื่องจากเป็นไฟล์ version เก่า',
-        footer: `<a href="${dataObj.url}" target="_blank">เปิดไฟล์ต้นฉบับ</a>`,
-      });
-    }
-    else {
-      let timestamp_labels = [];
-      let percentag_datasets = [];
-      let setup = dataObj.setup;
-
-      let detail = `
-              <h4 class="text-center mt-5 fw-bolder text-decoration-underline">
-                รายละเอียด
-              </h4>
-              <div class="d-flex justify-content-center gap-3 m-3">
-                <button class="btn btn-secondary reloadTable px-5"
-                  id="reloadTable_room" type="button"
-                  name="${dataObj.url}">
-                  <i class="fa-solid fa-arrows-rotate"></i> อัพเดทข้อมูล
-                </button>
-                <button class="btn btn-danger endjob px-5 root-admin root-superuser"
-                  id="endjob_room" type="button"
-                  name="${dataObj.url}">
-                  <i class="fa-solid fa-cloud-arrow-up"></i> จบการผลิต
-                </button>
-              </div>
-              <div class="d-grid gap-2 col-12 justify-content-center">
-                <ul>
-                  <li class="lh-lg">ชื่อยา ${setup[2]}</li>
-                  <li class="lh-lg">เลขที่ผลิต ${setup[3]}</li>
-                  <li class="lh-lg">เครื่องชั่งหมายเลข ${setup[1]}</li>
-                  <li class="lh-lg">เครื่องตอก ${setup[0]}</li>
-                  <li class="lh-lg">น้ำหนักตามทฤษฎี 10 เม็ด	 ${setup[4]} กรัม</li>
-                  <li class="lh-lg">% ช่วงน้ำหนักเบี่ยงเบนที่ยอมรับ ${setup[9]}</li>
-                  <li class="lh-lg">ช่วงน้ำหนัก 10 เม็ด ${setup[5]} - ${setup[6]} กรัม</li>
-                  <li class="lh-lg">ค่าความหนา(Thickness) ${setup[10]} - ${setup[11]} มิลลิเมตร(mm)</li>
-                </ul>
-              </div>`;
-
-      $("#weight_detail_room").html(detail);
-
-      //** สร้างตารางข้อมูลน้ำหนักยา 10 เม็ด **//
-      let dataTableWeight = `<table id="weight_room" class="table table-striped table-responsive" style="width: 100%">
-              <thead class='p-3 mb-2 bg-primary text-white'>
-                <tr>
-                    <th rowspan="2">วันที่,เวลา</th>
-                    <th colspan="10" style="font-size: 18px; position: relative;">ตารางบันทึกบันทึกค่าน้ำหนัก 10 เม็ด 2 ครั้งทุก 30 นาที
-                      <button type="button" class="btn btn-warning add-checker px-3 root-admin root-superuser" 
-                        style="position: absolute; top: 3px; right: 10px;">
-                        <i class="fa-solid fa-stamp"></i>
-                          ลงชื่อผู้ตรวจสอบ
-                      </button>
-                    </th>
-                </tr>
-                <tr>
-                  <th scope="col">TYPE</th>
-                  <th scope="col">ครั้งที่ 1</th>
-                  <th scope="col">ครั้งที่ 2</th>
-                  <th scope="col">ค่าเฉลี่ย</th>   
-                  <th scope="col">นน.เฉลี่ย</th>                     
-                  <th scope="col">ความผิดปกติ</th>
-                  <th scope="col">ผู้ปฏิบัติ</th>
-                  <th scope="col">ผู้ตรวจสอบ</th>
-                </tr>
-              </thead>`;
-
-      let dataTableTickness = `<table id="weight_room_tickness" class="table table-striped table-responsive mt-5" style="width: 100%">
-            <thead class='p-3 mb-2 bg-primary text-white'>
-                <tr>
-                    <th rowspan="3">วันที่,เวลา</th>
-                    <th colspan="10" style="font-size: 18px">ตารางบันทึกค่าความหนาของเม็ดยา ทุก 2 ชั่วโมง</th>     
-                </tr>
-                <tr>
-                    <th colspan="10" class="Thickness_min_max" style="font-size: 14px" data-min="7.00" data-max="8.00">
-                      ค่าความหนา(Thickness) ${setup[10]} - ${setup[11]} มิลลิเมตร(mm)
-                    </th>     
-                </tr>
-                <tr>`;
-
-      for (let i = 1; i <= 10; i++) {
-        dataTableTickness += `<th scope="col">${i}</th>`;
-      }
-
-      dataTableTickness += "</tr></thead>";
-
-      dataTableWeight += "<tbody>";
-      dataTableTickness += "<tbody>";
-
-      dataObj.data.forEach((dataArray, index) => {
-        dataTableWeight += "<tr>";
-        if (dataArray[9] != "-") {
-          dataTableTickness += "<tr>";
-          dataTableTickness += "<td>" + dataArray[0] + "</td>";
-        }
-        dataArray.forEach((d, item) => {
-          if (item == 0) {
-            timestamp_labels.push(d)
-          }
-          else if (item == 5) {
-            percentag_datasets.push(d)
-          };
-
-          if (item <= 8) {
-            if (item == 5) {
-              dataTableWeight += `<td>${d}%</td>`;
-            } else if (item == 6 && d) {
-              dataTableWeight += `<td><div class="tablet-detail-room">${d}</div></td>`;
-            } else if (item == 6) {
-              dataTableWeight += `<td><div class="tablet-detail-room">ไม่ระบุ</div></td>`;
-            } else if (dataObj.colors[index][item] != "#ffffff") {
-              dataTableWeight += `<td><div class="data-control" style="background-color:${dataObj.colors[index][item]}">${d}</div></td>`;
-            } else {
-              dataTableWeight += `<td>${d}</td>`;
-            }
-          } else if (item > 8 && dataArray[9] != "-") {
-            if (dataObj.colors[index][item] != "#ffffff") {
-              dataTableTickness += `<td style="color:${dataObj.colors[index][item]}">${d}</td>`;
-            } else {
-              dataTableTickness += `<td>${d}</td>`;
-            }
-          };
-        });
-        dataTableWeight += "</tr>";
-        if (dataArray[0][9] != "-") {
-          dataTableTickness += "</tr>";
-        }
-      });
-
-      dataTableWeight += "</tbody></table>";
-      dataTableTickness += "</tbody></table>";
-
-      $("#WeightTableRoom_weight").html(dataTableWeight);
-      $("#WeightTableRoom_tickness").html(dataTableTickness);
-
-      /////** สิ้นสุดการสร้างตารางข้อมูลน้ำหนักยา 10 เม็ด **/////
-
-      /////** สร้างตาราง remarks **/////
-      let dataTableRemarks = `<table id="weight_room_remarks" 
-              class="remarks table table-striped table-responsive mt-5" style="width: 100%">
-            <thead class='p-3 mb-2 bg-primary text-white'>
-              <tr>
-                <th colspan="6" style="font-size: 18px; position: relative;">Remarks
-                  <button type="button" class="btn btn-warning add-remarks px-3 root-admin root-superuser" 
-                    style="position: absolute; top: 3px; right: 10px;">
-                    <i class="fa-solid fa-plus"></i>
-                      ลงปันทึก
-                  </button>
-                </th>
-              </tr>
-              <tr>
-                  <th scope="col">วันที่/เวลา</th>
-                <th scope="col">เหตุการที่เกิดการเปลี่ยนแปลง</th>
-                <th scope="col">สาเหตุ</th>
-                <th scope="col">การแก้ไข</th>
-                <th scope="col">หมายเหตุ</th>
-                <th scope="col">ผู้บันทึก</th>  
-              </tr>
-            </thead>`;
-
-      dataTableRemarks += '<tbody>';
-
-      if (dataObj.remarks.length > 0) {
-        dataObj.remarks.forEach(dataArr => {
-          dataTableRemarks += '<tr>';
-          dataArr.forEach(data => {
-            dataTableRemarks += `<td>${data}</td>`;
-          });
-          dataTableRemarks += '</tr>';
-        });
-      }
-      // else {
-      //   dataTableRemarks += '<tr><td colspan="4" class="text-center">***** ยังไม่มีข้อมูล *****</td></tr>';
-      // }
-
-      dataTableRemarks += '</tbody></table>';
-      $("#WeightTableRoom_remarks").html(dataTableRemarks);
-
-      // กำหนดสิทธิ์การใช้งาน
-      const root = localStorage.getItem("root");
-      if (root != "Superuser" && root != "Admin") {
-        $(".root-superuser").addClass("d-none");
-        $(".root-admin").addClass("d-none");
-      };
-
-      // สร้าง dropdown ลักษณะเม็ดยา จาก list_datail และ color_datail
-      $(document).ready(function () {
-        let element = $('#weight_room .tablet-detail-room');
-        let dropdown = $('<select>').addClass('tablet-detail-room');
-
-        if (root != "User") {
-          $.each(list_datail, function (index, item) {
-            let option = $('<option>').val(item).text(item);
-            dropdown.append(option);
-          });
-
-          element.replaceWith(dropdown);
-        };
-
-        element.each(function (index, el) {
-          let optionEl = $('body #weight_room .tablet-detail-room');
-          const val = $(el).text();
-          optionEl.eq(index).val(val);
-          optionEl.eq(index).css("background-color", color_datail[list_datail.indexOf(val)]);
-        });
-
-
-
-        createChart(timestamp_labels, percentag_datasets); // สร้างกราฟ
-        dataTable_room = $("#weight_room").DataTable(setupTable); // สร้างตาราง
-      });
-    }
-  };
-
-  function root_detail_room() {
-    $("body").on("change", "#weight_room .tablet-detail-room", function () {
-      let el = $(this);
-      let val = el.val();
-      el.css("background-color", color_datail[list_datail.indexOf(val)]);
-
-      const url = el.parents(".menu-bar").find(".openFile").attr("href");
-      const date_time = el.parents("tr").find("td:first").text();
-
-      google.script.run.withSuccessHandler((res) => {
-        success_save();
-      }).withFailureHandler(failed).recodeCharacteristics(url, date_time, val);
-    });
-  };
-
-  // ลงชื่อผู้ตรวจสอบ
-  function root_addChecker() {
-    const username = localStorage.getItem("username");
-    const root = localStorage.getItem("root");
-    if (root == "Superuser" || root == "Admin") {
-      $("body").on("click", "table#weight_room .add-checker", function () {
-        const el = $(this);
-        const url = el.parents(".menu-bar").find(".openFile").attr("href");
-        el.find("i").addClass("fa-bounce");
-        google.script.run.withSuccessHandler((res) => {
-          el.parents(".menu-bar").find("#reloadTable_room").trigger('click');
-          el.find("i").removeClass("fa-bounce");
-          success_save();
-        }).withFailureHandler(failed).addChecker(url, username);
-      });
-    };
-  };
 </script>
 
 <!-- slide ของตารางน้ำหนัก IPC -->
@@ -787,17 +528,398 @@
   }
 </script>
 
+<!-- ตั้งค่า DataTable -->
+<script>
+  let setupTable = {
+    // กำหนดเมนูแสดงจำนวนแถว
+    lengthMenu: [
+      [5, 10, 15, 20, 50, 100, -1],
+      ["5", "10", "15", "20", "50", "100", "ทั้งหมด"],
+    ],
+
+    // order: [[6, 'desc']],
+    ordering: false,
+    iDisplayLength: 10,
+    responsive: true,
+
+    //ภาษาไทย
+    language: {
+      sLengthMenu: "แสดง _MENU_ รายการ",
+      sZeroRecords: "ไม่พบข้อมูล",
+      sInfo: "แสดง _START_ ถึง _END_ จาก _TOTAL_ รายการ",
+      sInfoEmpty: "แสดง 0 ถึง 0 จาก 0 รายการ",
+      sInfoFiltered: "(กรองข้อมูลจาก _MAX_ รายการ)",
+      sInfoPostFix: "",
+      sSearch: "ค้นหา:",
+      sUrl: "",
+      oPaginate: {
+        sFirst: "หน้าแรก",
+        sPrevious: "ก่อนหน้า",
+        sNext: "ถัดไป",
+        sLast: "หน้าสุดท้าย",
+      },
+    },
+  };
+</script>
+
+<!-- สร้างตารางน้ำหนัก 10 เม็ด -->
+<script>
+  function createTable_ROOM(dataObj) {
+    let weight_temp_room = []; // เก็บค่าน้ำหนักที่อยู่ในเกณฑ์เพื่อไปทำสรุปข้อมูล 
+    let tickness_temp_room = []; // เก็บค่าน้ำหนักที่อยู่ในเกณฑ์เพื่อไปทำสรุปข้อมูล
+
+    if(dataObj.result == false) {
+      Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: 'ไม่สามารถแสดงไฟล์ได้เนื่องจากเป็นไฟล์ version เก่า',
+        footer: `<a href="${dataObj.url}" target="_blank">เปิดไฟล์ต้นฉบับ</a>`,
+      });
+    }
+    else {
+      let timestamp_labels = [];
+      let percentag_datasets = [];
+      let setup = dataObj.setup;
+
+      let detail = `
+            <h4 class="text-center mt-5 fw-bolder text-decoration-underline">
+              รายละเอียด
+            </h4>
+            <div class="d-flex justify-content-center gap-3 m-3">
+              <button class="btn btn-secondary reloadTable px-5"
+                id="reloadTable_room" type="button"
+                name="${dataObj.url}">
+                <i class="fa-solid fa-arrows-rotate"></i> อัพเดทข้อมูล
+              </button>
+              <button class="btn btn-danger endjob px-5 root-admin root-superuser d-none"
+                id="endjob_room" type="button"
+                name="${dataObj.url}">
+                <i class="fa-solid fa-cloud-arrow-up"></i> จบการผลิต
+              </button>
+            </div>
+            <div class="d-grid gap-2 col-12 justify-content-center setting-list-detail">
+              <ul>
+                <li class="lh-lg product-name">ชื่อยา ${setup[2]}</li>
+                <li class="lh-lg lot-name">เลขที่ผลิต ${setup[3]}</li>
+                <li class="lh-lg">เครื่องชั่งหมายเลข ${setup[1]}</li>
+                <li class="lh-lg tablet-name">เครื่องตอก ${setup[0]}</li>
+                <li class="lh-lg">น้ำหนักตามทฤษฎี 10 เม็ด	 ${setup[4]} กรัม</li>
+                <li class="lh-lg">% ช่วงน้ำหนักเบี่ยงเบนที่ยอมรับ ${setup[9]}</li>
+                <li class="lh-lg">ช่วงน้ำหนัก 10 เม็ด ${setup[5]} - ${setup[6]} กรัม</li>
+                <li class="lh-lg">ช่วงน้ำหนักเบี่ยงเบนที่กฎหมายยอมรับ ${setup[7]} - ${setup[8]} กรัม</li>
+                <li class="lh-lg">ค่าความหนา(Thickness) ${setup[10]} - ${setup[11]} มิลลิเมตร(mm)</li>
+                ${setup[13]=="xxxxx"?"":`<li class="lh-lg">${setup[13]}</li>`}
+              </ul>
+            </div>
+            <div class="summary-room d-grid justify-content-center">
+            </div>`;
+
+      //** สร้างตารางข้อมูลน้ำหนักยา 10 เม็ด **//
+      let dataTableWeight = `<table id="weight_room" class="table table-striped table-responsive" style="width: 100%">
+            <thead class='p-3 bg-primary text-white'>
+              <tr>
+                  <th rowspan="2">วันที่,เวลา</th>
+                  <th colspan="10" style="font-size: 18px; position: relative;">ตารางบันทึกบันทึกค่าน้ำหนัก 10 เม็ด 2 ครั้งทุก 30 นาที
+                    <button type="button" class="btn btn-warning add-checker px-3 root-admin root-superuser" 
+                      style="position: absolute; top: 3px; right: 10px;">
+                      <i class="fa-solid fa-stamp"></i>
+                        ลงชื่อผู้ตรวจสอบ
+                    </button>
+                  </th>
+              </tr>
+              <tr>
+                <th scope="col">TYPE</th>
+                <th scope="col">ครั้งที่ 1</th>
+                <th scope="col">ครั้งที่ 2</th>
+                <th scope="col">นน.เฉลี่ย</th>   
+                <th scope="col">%นน.เฉลี่ย</th>                     
+                <th scope="col">ลักษณะเม็ด</th>
+                <th scope="col">ผู้ปฏิบัติ</th>
+                <th scope="col">ผู้ตรวจสอบ</th>
+              </tr>
+            </thead>`;
+
+      let dataTableTickness = `<table id="weight_room_tickness" class="table table-striped table-responsive mt-5" style="width: 100%">
+          <thead class='p-3 bg-primary text-white'>
+              <tr>
+                  <th rowspan="3">วันที่,เวลา</th>
+                  <th colspan="10" style="font-size: 18px">ตารางบันทึกค่าความหนาของเม็ดยา ทุก 2 ชั่วโมง</th>     
+              </tr>
+              <tr>
+                  <th colspan="10" class="Thickness_min_max" style="font-size: 14px" data-min="7.00" data-max="8.00">
+                    ค่าความหนา(Thickness) ${setup[10]} - ${setup[11]} มิลลิเมตร(mm)
+                  </th>     
+              </tr>
+              <tr>`;
+
+      for (let i = 1; i <= 10; i++) {
+        dataTableTickness += `<th scope="col">${i}</th>`;
+      }
+
+      dataTableTickness += "</tr></thead>";
+
+      dataTableWeight += "<tbody>";
+      dataTableTickness += "<tbody>";
+
+      let min_weight_control = setup[5];
+      let max_weight_control = setup[6];
+      dataObj.data.forEach((dataArray, index) => {
+        dataTableWeight += "<tr>";
+        if (dataArray[9] != "-") {
+          dataTableTickness += "<tr>";
+          dataTableTickness += "<td>" + dataArray[0] + "</td>";
+        };
+
+        dataArray.forEach((d, item) => {
+          if (item == 0) {
+            timestamp_labels.push(d);
+          } else if ((item == 2 || item == 3) && (d >= min_weight_control && d <= max_weight_control)) {
+            weight_temp_room.push(d);
+          } else if (item == 5) {
+            percentag_datasets.push(d);
+          };
+
+          if (item <= 8) {
+            if(item == 0) {
+              dataTableWeight += `<td><div class="time-control" style="background-color:${dataObj.colors[index][item]}">${d}</div></td>`;
+            } else if (item == 5) {
+              dataTableWeight += `<td>${d}%</td>`;
+            } else if (item == 6 && d) {
+              dataTableWeight += `<td><div class="tablet-detail-room">${d}</div></td>`;
+            } else if (item == 6) {
+              dataTableWeight += `<td><div class="tablet-detail-room">ไม่ระบุ</div></td>`;
+            } else if (dataObj.colors[index][item] != "#ffffff") {
+              dataTableWeight += `<td><div class="data-control" style="background-color:${dataObj.colors[index][item]}">${d}</div></td>`;
+            } else if (item == 7) {
+              dataTableWeight += `<td><div class="tablet-operator-room">${d}</div></td>`;
+            } else {
+              dataTableWeight += `<td>${d}</td>`;
+            };
+          } else if (item > 8 && dataArray[9] != "-") {
+            tickness_temp_room.push(d);
+            if (dataObj.colors[index][item] != "#ffffff") {
+              dataTableTickness += `<td style="color:${dataObj.colors[index][item]}">${d}</td>`;
+            } else {
+              dataTableTickness += `<td>${d}</td>`;
+            };
+          };
+        });
+
+        dataTableWeight += "</tr>";
+
+        if (dataArray[0][9] != "-") {
+          dataTableTickness += "</tr>";
+        };
+      });
+  
+      dataTableWeight += "</tbody></table>";
+      dataTableTickness += "</tbody></table>";
+      
+      $("#weight_detail_room").html(detail); // ข้อมูลการตั้งค่าน้ำหนักยา 10 เม็ด
+      $("#WeightTableRoom_weight").html(dataTableWeight); // ข้อมูลการน้ำหนักยา 10 เม็ด
+      $("#WeightTableRoom_tickness").html(dataTableTickness); // ข้อมูลการความหนาของเม็ดยา 10 เม็ด
+
+      // สรุปผลการชั่งน้ำหนัก
+      $(document).ready(function () {
+        if(weight_temp_room) {
+          let weight_summary_min = Math.min(...weight_temp_room).toFixed(3);
+          let weight_summary_max = Math.max(...weight_temp_room).toFixed(3);
+          let weight_summary_average = (weight_temp_room.reduce((acc, val) => acc + parseFloat(val), 0) / weight_temp_room.length).toFixed(3);
+
+          let tickness_summary_min = Math.min(...tickness_temp_room).toFixed(2);
+          let tickness_summary_max = Math.max(...tickness_temp_room).toFixed(2);
+          let tickness_summary_average = (tickness_temp_room.reduce((acc, val) => acc + parseFloat(val), 0) / tickness_temp_room.length).toFixed(2);
+
+          $(".summary-room").html(`<h5 class="text-center lh-lg bg-success py-2 px-5 text-white rounded">
+              <span class="fw-semibold text-decoration-underline">สรุปข้อมูลการชั่งน้ำหนักทั้งหมด</span>
+              <div class="d-flex justify-content-between gap-5">
+                <span>ต่ำสุด ${weight_summary_min} กรัม</span>
+                <span>สูงสุด ${weight_summary_max} กรัม</span>
+                <span>เฉลี่ย ${weight_summary_average} กรัม</span>
+              </div>
+              <hr>
+              <span class="fw-semibold text-decoration-underline">สรุปข้อมูลการวัดความหนาทั้งหมด</span>
+              <div class="d-flex justify-content-between gap-5">
+                <span>ต่ำสุด ${tickness_summary_min} mm.</span>
+                <span>สูงสุด ${tickness_summary_max} mm.</span>
+                <span>เฉลี่ย ${tickness_summary_average} mm.</span>
+              </div>
+            </h5>`
+          );
+        };
+      });
+      /////** สิ้นสุดการสร้างตารางข้อมูลน้ำหนักยา 10 เม็ด **/////
+
+      /////** สร้างตาราง remarks **/////
+      let dataTableRemarks = `<table id="weight_room_remarks" 
+            class="remarks table table-striped table-responsive" style="width: 100%">
+          <thead class='p-3 bg-primary text-white'>
+            <tr>
+                <th scope="col">วันที่/เวลา</th>
+              <th scope="col">เหตุการที่เกิดการเปลี่ยนแปลง</th>
+              <th scope="col">สาเหตุ</th>
+              <th scope="col">การแก้ไข</th>
+              <th scope="col">หมายเหตุ</th>
+              <th scope="col">ผู้บันทึก</th>  
+            </tr>
+          </thead>`;
+
+      dataTableRemarks += '<tbody>';
+
+      if(dataObj.remarks.length > 0) {
+        dataObj.remarks.forEach(dataArr => {
+          dataTableRemarks += '<tr>';
+          dataArr.forEach(data => {
+            dataTableRemarks += `<td>${data}</td>`;
+          });
+          dataTableRemarks += '</tr>';
+        });
+      };
+
+      dataTableRemarks += '</tbody></table>';
+
+      let check_data = false; // ตรวจสอบว่ามีข้อมูลน้ำหนักยาหรือไม่
+      if(dataObj.data.length > 0) { check_data = true };
+
+      $("#remarks_room_div").html(dataTableRemarks);
+      $("#remarks_room_div").parents(".table-div-room").find(".table-title-remarks").removeClass("d-none");
+
+      const usernameLC = localStorage.getItem("username"); // ชื่อผู้ใช้งาน
+      const rootLC = localStorage.getItem("root"); // สิทธิ์การใช้งาน
+      
+      $(document).ready(function () {
+        // พบข้อมูลน้ำหนักยา
+        if(check_data) {
+          $(".table-div-room").removeClass("d-none");
+          
+          // กำหนดสิทธิ์การใช้งาน
+          if(rootLC == "Superuser" || rootLC == "Admin") {
+            if(rootLC == "Superuser") {
+              $(".root-superuser").removeClass("d-none");
+            } else if(rootLC == "Admin") {
+              $(".root-admin").removeClass("d-none");
+            };   
+            // endjob แสดงเฉพาะ lot ปัจจุบัน
+            if($("#selectedMenu_room").val().includes("เครื่องตอก")) {
+              $("#endjob_room").removeClass("d-none");
+              $("#weight_room .add-checker").removeClass("d-none");
+              $(".table-title-remarks .add-remarks").removeClass("d-none"); 
+            }else{
+              $("#endjob_room").addClass("d-none");
+              $("#weight_room .add-checker").addClass("d-none");
+              $(".table-title-remarks .add-remarks").addClass("d-none");
+            };
+          }
+          else {
+            $(".root-superuser").addClass("d-none");
+            $(".root-admin").addClass("d-none");
+          };
+        }
+        else {
+          $("#endjob_room").addClass("d-none");
+          $(".table-div-room").addClass("d-none");
+        };
+      });
+
+      // สร้าง dropdown ลักษณะเม็ดยา จาก list_datail และ color_datail
+      $(document).ready(function () {
+        let element = $('#weight_room .tablet-detail-room');
+        let dropdown = $('<select>').addClass('tablet-detail-room');
+        let listname = $("#selectedMenu_room").val().includes("เครื่องตอก");
+
+        if(rootLC != "User" && listname) {
+          $.each(list_datail, function(index, item) {
+              let option = $('<option>').val(item).text(item);
+              dropdown.append(option);
+          });
+          
+          element.replaceWith(dropdown);
+        };
+
+        element.each(function(index, el) {
+          let optionEl = $('body #weight_room .tablet-detail-room');
+          const username = optionEl.eq(index).parents("tr").find(".tablet-operator-room").html();
+          const val = $(el).text();
+          
+          optionEl.eq(index).val(val);
+          optionEl.eq(index).css("background-color",color_datail[list_datail.indexOf(val)]); 
+          if(val != 'ไม่ระบุ' || username != usernameLC) {
+            optionEl.eq(index).prop('disabled', true);
+          };
+        });
+
+        createChart(timestamp_labels, percentag_datasets); // สร้างกราฟ
+        $("#weight_room").DataTable(setupTable); // สร้างตาราง
+      });
+    }
+  };
+</script>
+
+<!-- สร้างตารางรายละเอียดการปฏิบัติงาน -->
+<script>
+  $(document).ready(function() {
+    $("#update_auditTrail").on("click", auditTrail_record);
+  });
+  
+  function auditTrail_record() {
+    $("#update_auditTrail").parent().find("i").addClass("fa-spin");
+    google.script.run.withSuccessHandler(function(dataArr) {
+      createTable_AuditTrail(dataArr);
+      $("#update_auditTrail").parent().find("i").removeClass("fa-spin");
+    }).getAuditTrail_data();
+  };
+
+  function createTable_AuditTrail(dataArr) {
+    //** สร้างตารางข้อมูลน้ำหนักยา 10 เม็ด **//
+    let dataTable = `<table id="auditTrail_table" class="table table-striped table-responsive" style="width: 100%">
+          <thead class='p-3 bg-primary text-white'>
+            <tr>
+                <th rowspan="2">วันที่,เวลา</th>
+                <th colspan="4" style="font-size: 18px; position: relative;">บันทึกการปฎิบัติงาน</th>
+            </tr>
+            <tr>
+              <th scope="col">รายการ</th>
+              <th scope="col">รายละเอียด</th>
+              <th scope="col">ผู้บันทึก</th>
+            </tr>
+          </thead>`;
+
+    dataTable += '<tbody>';
+
+    if(dataArr.length > 0) {
+      dataArr.reverse().forEach(dataArr => {
+        dataTable += '<tr>';
+        dataArr.forEach(data => {
+          dataTable += `<td>${data}</td>`;
+        });
+        dataTable += '</tr>';
+      });
+    };
+
+    dataTable += '</tbody></table>';
+    $("#auditTrail_div").html(dataTable);
+
+    $(document).ready(function() {
+      $("#auditTrail_table").DataTable(setupTable); // สร้างตาราง
+    });
+  };
+</script>
+
 <!-- สร้าง DropdownList รายการผลิตทั้งหมด -->
 <script>
+  let sheetListsIPC, sheetListsROOM;
+  let eventSearchData = false; // ตัวแปรเพื่อเก็บสถานะการเพิ่มเหตุการณ์
   function createDropdownList_allSheet(dataObj) {
+    sheetListsIPC = dataObj.sheetListsIPC;
+    sheetListsROOM  = dataObj.sheetListsROOM;
     let sheetNameLists_IPC = [];
     let sheetNameLists_ROOM = [];
-
-    dataObj.sheetListsIPC.forEach(data => {
+    
+    sheetListsIPC.forEach(data => {
       sheetNameLists_IPC.push(data[0]);
     });
 
-    dataObj.sheetListsROOM.forEach(data => {
+    sheetListsROOM.forEach(data => {
       sheetNameLists_ROOM.push(data[0]);
     });
 
@@ -805,20 +927,20 @@
       source: sheetNameLists_IPC.reverse(),
       autoFocus: false,
       minLength: 0,
-      open: function (event, ui) {
+      open: function(event, ui) {
         var widget = $(this).autocomplete("widget");
         widget.attr("id", "selected_ipc");
       }
     })
-      .focus(function () {
-        $(this).data("ui-autocomplete").search($(this).val());
-      });
+    .focus(function () {
+      $(this).data("ui-autocomplete").search($(this).val());
+    });
 
     $("#selectedMenu_room").autocomplete({
       source: sheetNameLists_ROOM.reverse(),
       autoFocus: false,
       minLength: 0,
-      open: function (event, ui) {
+      open: function(event, ui) {
         var widget = $(this).autocomplete("widget");
         widget.attr("id", "selected_room");
       }
@@ -829,41 +951,53 @@
     // ใช้สำหรับ navbar หรือ modal
     // $("#selectedMenu_ipc" ).autocomplete( "option", "appendTo", ".eventInsForm" );
     // $("#selectedMenu_room" ).autocomplete( "option", "appendTo", ".eventInsForm" );
-
-    $("body").on("click", "#selected_ipc li", function () {
-      const element = $("#selectedMenu_ipc");
-      const el_val = $(this).text();
-      let url = dataObj.sheetListsIPC.find(name => {
-        return el_val == name[0];
+    if(!eventSearchData) {
+      $("body").on("click", "#selected_ipc li", function () {
+        const element = $("#selectedMenu_ipc");
+        const el_val = $(this).text();
+        let url = search_ipc(el_val);
+        
+        $("#openFile_IPC").attr("href", url);
+        loadingStart("กำลังโหลด", element.parent());
+        google.script.run.withSuccessHandler((res)=>{loadingEnd(element.parent()); createTable_IPC(res)}).getCurrentData_IPC(url);    
       });
 
-      console.log(url)
-      url = url[1];
+      $("body").on("click", "#selected_room li", function () {
+        const element = $("#selectedMenu_room");
+        const el_val = $(this).text();
 
-      $("#openFile_IPC").attr("href", url);
-      loadingStart("กำลังโหลด", element.parent());
-      google.script.run.withSuccessHandler((res) => { loadingEnd(element.parent()); createTable_IPC(res) }).getCurrentData_IPC(url);
-    });
+        let url = search_room(el_val);
 
-    $("body").on("click", "#selected_room li", function () {
-      const element = $("#selectedMenu_room");
-      const el_val = $(this).text();
-      let url = dataObj.sheetListsROOM.find(name => {
-        return el_val == name[0];
+        $("#openFile_ROOM").attr("href", url);
+        loadingStart("กำลังโหลด", element.parent());
+        google.script.run.withSuccessHandler((res)=>{loadingEnd(element.parent()); createTable_ROOM(res)}).getCurrentData_ROOM(url);  
       });
 
-      console.log(url)
-      url = url[1];
+      // เมื่อกดปุ่ม X ให้เคลียร์ค่าใน input ที่อยู่ใน element เดียวกัน
+      $('.clear-select').on('click', function() {
+        $(this).prev('input').val('');
+      });
 
-      $("#openFile_ROOM").attr("href", url);
-      loadingStart("กำลังโหลด", element.parent());
-      google.script.run.withSuccessHandler((res) => { loadingEnd(element.parent()); createTable_ROOM(res) }).getCurrentData_ROOM(url);
-    });
+      eventSearchData = true;
+    };
 
-    // เมื่อกดปุ่ม X ให้เคลียร์ค่าใน input ที่อยู่ใน element เดียวกัน
-    $('.clear-select').on('click', function () {
-      $(this).prev('input').val('');
-    });
+    // ค้นหา url ตามชื่อรายการที่เลือก
+    function search_ipc(name) {
+      let url = sheetListsIPC.find(list => {
+        return name == list[0];
+      });
+
+      return url[1];
+    };
+
+    // ค้นหา url ตามชื่อรายการที่เลือก
+    function search_room(name) {
+      let url = sheetListsROOM.find(list => {
+        return name == list[0];
+      });
+
+      return url[1];
+    };
   };
 </script>
 
@@ -873,29 +1007,34 @@
   function updateSettingList() {
     google.script.run.withSuccessHandler(createDropdownList_Setting).getDataSetting();
   }
-
+  
   function createDropdownList_Setting(dataObj) {
     let producNameList = [];
-
+    
     // เคลียร์ dropdownlist
     $('#userNames_list option:not(:first)').remove();
     $('#TabletID_form option:not(:first)').remove();
     $('#ScalesIPC_form option:not(:first)').remove();
     $('#ScalesROOM_form option:not(:first)').remove();
 
+    // สร้าง DropdownList รายชื่อพนักงาน
+    // dataObj.userList = dataObj.userList.sort((a, b) => a[3].localeCompare(b[3]));
     dataObj.userList.forEach(data => {
       $('#userNames_list').append(`<option value="${data[0]}">${data[2]}</option>`);
     });
 
+    // สร้าง DropdownList รายชื่อเครื่องตอก
     dataObj.tabletList.forEach(data => {
       $('#TabletID_form').append(`<option value="${data[0]}">เครื่องตอก ${data[0]}</option>`);
     });
 
-    dataObj.scaleList.forEach(data => {
+    // สร้าง DropdownList รายชื่อเครื่องชั่ง
+    dataObj.scaleList.sort().forEach(data => {
       $('.Scales_form').append(`<option value="${data[0]}">${data[0]}</option>`);
     });
 
-    dataObj.producNameList.forEach(data => {
+    // สร้าง DropdownList รายชื่อยา
+    dataObj.producNameList.sort().forEach(data => {
       producNameList.push(data[0]);
     });
 
@@ -904,14 +1043,14 @@
       source: producNameList,
       autoFocus: false,
       minLength: 0,
-      open: function (event, ui) {
+      open: function(event, ui) {
         var widget = $(this).autocomplete("widget");
         widget.attr("id", "selected_productName");
       }
     })
-      .focus(function () {
-        $(this).data("ui-autocomplete").search($(this).val());
-      });
+    .focus(function () {
+      $(this).data("ui-autocomplete").search($(this).val());
+    });
 
     // เพิ่ม event ให้ #ProductName_form
     $("body").on("click", "#selected_productName li", function () {
@@ -922,26 +1061,25 @@
 
       // console.log(dataLists)
       let dataList = dataLists.slice(1)
-      $.each(dataList, function (index, value) {
+      $.each(dataList, function(index, value) {
         // เซ็ตค่าของ element input ตาม value ใน array
-        $('.weight-setup').eq(index).val(value.replace("%", ""))
+        $('.weight-setup').eq(index).val(value.replace("%",""))
       });
     });
-
-    $("#ProductName_form").on("keyup", function () {
+    
+    $("#ProductName_form").on("keyup", function(){
       $('.weight-setup').val("");
     });
 
 
     // เพิ่ม event ให้ #userNames_list
-    $("#userNames_list").on("change", function () {
+    $("#userNames_list").on("change", function() {
       let val = $(this).val();
       let dataLists = dataObj.userList.find(data => {
         return val == data[0];
       });
 
-      // console.log(dataLists)
-      $.each(dataLists, function (index, value) {
+      $.each(dataLists, function(index, value) {
         // เซ็ตค่าของ element input ตาม value ใน array
         $('.userEdit').eq(index).val(value)
       });
@@ -951,143 +1089,370 @@
 
 <!-- ตั้งค่าน้ำหนัก,ส่งข้อมูลไปบันทึกการตั้งค่า -->
 <script>
-  $('#setOrEditProduct_form').on('submit', function () {
+  $('#setOrEditProduct_form').on('submit', function() {
     event.preventDefault();
     let element = $(this);
 
     loadingStart("กำลังบันทึกข้อมูล", element);
 
     let form_command = $("#command_set_form").val();
-    if (form_command == "setupForm") {
-      google.script.run.withSuccessHandler((result) => {
+    if(form_command == "setupForm"){
+      google.script.run.withSuccessHandler((result)=>{
         success();
         loadingEnd(element);
         updateSettingList();
         this.reset();
       }).setupWeight(this);
     }
-    else {
-      google.script.run.withSuccessHandler((result) => {
+    else{
+      google.script.run.withSuccessHandler((result)=>{
         success();
         loadingEnd(element);
         updateSettingList();
         this.reset();
       }).addOrEditWeightDatabase(this);
-    };
+    };     
   });
 </script>
 
 <!-- เพิ่มหรือแก้ไขรายชื่อพนักงาน,ส่งข้อมูลไปบันทึก -->
 <script>
-  $('#form_editUser').on('submit', function () {
+  $('#form_editUser').on('submit', function() {
     event.preventDefault();
     let element = $(this);
-    console.log(element)
+    // console.log(element)
     loadingStart("กำลังบันทึกข้อมูล", element);
-    google.script.run.withSuccessHandler((result) => {
+    google.script.run.withSuccessHandler((result)=>{
       success();
       loadingEnd(element);
       updateSettingList();
       this.reset();
     }).addOrEditUser(this);
   });
+
+  $("#deleteUserBtn").on("click", function() {
+    let element = $(this).parents("form");
+    let selected_user = element.find("#userNames_list").val();
+    let form = document.getElementById("form_editUser");
+
+    if(selected_user) {
+      Swal.fire({
+        title: 'ลบข้อมูลผู้ใช้งาน',
+        text: "ต้องการลบข้อมูลผู้ใช้งาน",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'ยืนยัน, ลบข้อมูล!'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          loadingStart("กำลังบันทึกข้อมูล", element);
+          google.script.run.withSuccessHandler((result)=>{
+            success();
+            loadingEnd(element);
+            updateSettingList();
+            form.reset();
+          }).withFailureHandler(failed).deleteUser(form);
+        };
+      });
+    } else {
+      failed("เลือกรายชื่อที่ต้องการลบ!");
+    };
+  });
 </script>
 
-<!-- addEventTable operator-->
+<!-- รวม EventListener-->
 <script>
+  let color_datail = ["#6c757d","#34a853","#ff0000"];    
+  let list_datail = ["ไม่ระบุ", "ปกติ", "ผิดปกติ"];
+
   // ลงบันทึกลักษณะเม็ดยาของ ipc
   function recordTableDetail_IPC() {
-    $("body").on("click", "table.WeightIPC .tablet-detail-ipc", function () {
+    $("body").on("click", "table.WeightIPC .tablet-detail-ipc", function() {
       let el = $(this);
-      let url = $("#openFile_IPC").attr("href");
-      let sheetName = el.attr("name");
-      let date_time = el.parents("table").find(".date-time-ipc").html();
+      let operator = el.parents("table").find(".tablet-operator-ipc").html();
+      
+      const username = localStorage.getItem("username");
+      if(username != operator || el.val() != "ไม่ระบุ") {
+        el.prop('disabled', true);
+      };
+    });
 
-      $(document).ready(function () {
-        (async () => {
-          const { value: text } = await Swal.fire({
-            title: 'ลักษณะของเม็ดยา',
-            text: `วันที่ ${date_time}`,
-            input: 'text',
-            confirmButtonText: 'บันทึก',
-            inputPlaceholder: 'ระบุลักษณะของเม็ดยา...'
-          });
+    $("body").on("change", "table.WeightIPC .tablet-detail-ipc", function () {
+      let el = $(this);
+      let val = el.val();
+      
+      el.css("background-color",color_datail[list_datail.indexOf(val)]);
 
-          if (text) {
-            google.script.run.withSuccessHandler(function () {
-              $(el).text(text);
-              success_save();
-            }).withFailureHandler(failed).setTabletDetail_IPC(url, sheetName, date_time, text);
-          };
-        })();
-      });
+      const username = localStorage.getItem("username");
+      let sheetName = el.parent().attr("name");
+      let timestamp = el.parents("table").find(".date-time-ipc").html();
+      const url = el.parents(".page").find(".openFile").attr("href");
+
+      google.script.run.withSuccessHandler((res)=>{
+        success_save();
+      }).withFailureHandler(failed).setTabletDetail_IPC(url, sheetName, timestamp, val);
+
+      let remarkEl_temp = el.parents("div").find("table.remarks tbody:first");
+      if(val == "ผิดปกติ") {
+        // ลงบันทึก remarks เมื่อพบลักษณะเม็ดยาผิดปกติ และแจ้งเตือนไลน์
+        abnormal_tablet(remarkEl_temp, timestamp, "IPC");
+      };
     });
   };
+
+  // ลงบันทึกลักษณะเม็ดยาแบบชั่ง 10 เม็ด
+  function recordTableDetail_ROOM() {
+    $("body").on("click", "#weight_room .tablet-detail-room", function () {
+      let el = $(this);
+      const operator = el.parents("tr").find(".tablet-operator-room").text();
+      const username = localStorage.getItem("username");
+
+      if(username != operator || el.val() != 'ไม่ระบุ') {
+        el.prop('disabled', true);
+      };
+    });
+
+    $("body").on("change", "#weight_room .tablet-detail-room", function () {
+      let el = $(this);
+      let val = el.val();
+      
+      el.css("background-color",color_datail[list_datail.indexOf(val)]);
+
+      const url = el.parents(".page").find(".openFile").attr("href");
+      const timestamp = el.parents("tr").find("td:first").text();
+
+      google.script.run.withSuccessHandler((res)=>{
+        success_save();
+      }).withFailureHandler(failed).recodeCharacteristics(url, timestamp, val);
+
+      let remarkEl_temp = el.parents("div").find("table.remarks tbody:first");
+      if(val == "ผิดปกติ") {
+        // ลงบันทึก remarks เมื่อพบลักษณะเม็ดยาผิดปกติ และแจ้งเตือนไลน์
+        abnormal_tablet(remarkEl_temp, timestamp, "10 เม็ด");
+      };
+    });
+  };
+
+  // ลงบันทึก remarks เมื่อพบลักษณะเม็ดยาผิดปกติ และแจ้งเตือนไลน์
+  function abnormal_tablet(element, timestamp, type) { 
+    const tabletID = element.parents("div").find(".setting-list-detail ul .tablet-name:first").html();
+    const productName = element.parents("div").find("ul .product-name:first").html();
+    const lot = element.parents("div").find(".setting-list-detail ul .lot-name:first").html();
+    const date_time = new Date().toLocaleString('en-GB', { hour12: false });
+    const username = localStorage.getItem("username");
+    const url = element.parents(".page").find(".openFile").attr("href");
+    const message_alert = `\n🔰ระบบเครื่องชั่ง ${type}\
+    \n🔰${tabletID} \
+    \n🔰${productName} \
+    \n🔰${lot}\n`;
+
+    const message = `❌พบเม็ดยาลักษณะ: "ผิดปกติ" \nในช่วงเวลาการชั่ง: ${timestamp} \nผู้ปฏิบัติงาน: ${username}`;
+
+    let form = {
+      remarks_product: productName,
+      remarks_lot: lot,
+      remarks_url: url,
+      remark_timestamp: date_time,
+      problem: message,
+      causes: "",
+      amendments: "",
+      note: "",
+      usernameLC: "แจ้งเตือนจากระบบ"
+    };
+
+    google.script.run.withSuccessHandler((res)=>{
+      sendLineNotify(message_alert+message);
+      const newEl = `<tr>
+                      <td>${res.dataList[0]}</td>
+                      <td>${res.dataList[1]}</td>
+                      <td>${res.dataList[2]}</td>
+                      <td>${res.dataList[3]}</td>
+                      <td>${res.dataList[4]}</td>
+                      <td>${res.dataList[5]}</td>
+                    </tr>`;
+
+      element.append(newEl);
+    }).withFailureHandler(failed).recordRemarks(form);
+  };
+  
+  // ลงชื่อผู้ตรวจสอบ
+  function root_addChecker() {
+    const username = localStorage.getItem("username");
+    const root = localStorage.getItem("root");
+    if(root == "Superuser" || root == "Admin") {
+      $("body").on("click", "table#weight_room .add-checker", function() {
+        const el = $(this);
+        const url = el.parents(".page").find(".openFile").attr("href");
+        el.find("i").addClass("fa-bounce");
+        google.script.run.withSuccessHandler((res)=>{
+          el.parents(".page").find("#reloadTable_room").trigger('click');
+          el.find("i").removeClass("fa-bounce");
+          success_save();
+        }).withFailureHandler(failed).addChecker(url, username);
+      });
+    };
+  };
+
+  // refresh page, endjob
+  $(document).ready(function() {
+    const rootLC = localStorage.getItem("root");
+    // refresh page
+    $("body").on("click", ".reloadTable", function() {
+      const el = $(this);
+      const id = el.attr("id");
+      const url = el.attr("name")
+      el.find("i").addClass("fa-spin");
+
+      if(id == "reloadTable_ipc") {
+        google.script.run.withSuccessHandler((res)=> {
+          el.find("i").removeClass("fa-spin");
+          createTable_IPC(res);
+        }).getCurrentData_IPC(url);
+      } else if(id == "reloadTable_room") {
+        google.script.run.withSuccessHandler((res)=> {
+          el.find("i").removeClass("fa-spin");
+          createTable_ROOM(res);
+        }).getCurrentData_ROOM(url);
+      };     
+    });
+  
+    // จัดเก็บเอกสานการผลิตและเคลียร์ข้อมูล
+    $("body").on("click", ".endjob", function() {
+      const el = $(this);
+      const type = el.attr("id");
+      const url = el.attr("name")
+      const username = localStorage.getItem("username");
+      let remarks_state = false;
+
+      // เลือกตารางที่มี id เป็น "weight_room_remarks" และเลือกคอลั่มที่ 3
+      el.parents('.page').find('.remarks tbody tr').each(function() {
+        let column3 = $(this).find('td:nth-child(3)').text().trim();
+        let column4 = $(this).find('td:nth-child(4)').text().trim();
+        
+        // ตรวจสอบว่าไม่มีข้อมูลในคอลัมน์ที่ 3 หรือคอลัมน์ที่ 4 ของแถวนี้
+        if (column3 === '' || column4 === '') {
+          remarks_state = true;
+          return;
+        };
+      });
+
+      // ตรวจพบว่ายังไม่ได้ลงข้อมูลครบถ้วน
+      if (remarks_state) {
+        failed("ยังไม่ได้ลงข้อมูล Remarks!", "ลงข้อมูล remarks ให้เรียบร้อยก่อน จบการผลิต");
+      } else {
+        endjob(type, url, username, el);
+      };
+    });
+
+    function endjob(type, url, username, element) {
+      Swal.fire({
+        title: 'สิ้นสุดการตอกยาเม็ด',
+        text: "เก็บเอกสารและเคลียร์ข้อมูล",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'ยืนยัน, เคลียร์ข้อมูล!'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          $(".loading-endjob").removeClass("d-none");
+
+          if(type == "endjob_ipc") {
+            google.script.run.withSuccessHandler((res)=> {
+              $(".loading-endjob").addClass("d-none");
+              success();
+              createTable_IPC(res);
+              google.script.run.withSuccessHandler(createDropdownList_allSheet).getAllSheet(rootLC);
+            }).withFailureHandler(failed).endJob_IPC(url, username);
+          } 
+          else if(type == "endjob_room") {
+            google.script.run.withSuccessHandler((res)=> {
+              $(".loading-endjob").addClass("d-none");
+              success();
+              createTable_ROOM(res);
+              google.script.run.withSuccessHandler(createDropdownList_allSheet).getAllSheet(rootLC);
+            }).withFailureHandler(failed).endJob_ROOM(url, username);
+          };
+        };
+      });
+    };
+  });
 </script>
 
 <!-- เพิ่ม,ลงบันทึก remarks -->
 <script>
   function root_remarks() {
     const root = localStorage.getItem("root");
-    if (root == "Superuser" || root == "Admin") {
+    if(root == "Superuser" || root == "Admin") {
       const remarks_modal = new bootstrap.Modal('#remarks_modal');
       let remarkEl_temp;
       // เพิ่มบันทึก remarks
-      $("body").on("click", "table.remarks .add-remarks", function () {
+      $("body").on("click", ".table-title-remarks .add-remarks", function() {
         const el = $(this);
-        const url = el.parents(".menu-bar").find(".openFile").attr("href");
+        const url = el.parents(".page").find(".openFile").attr("href");
         const date_time = new Date().toLocaleString('en-GB', { hour12: false });
 
+        const product = el.parents(".page").find(".product-name").html();
+        const lot = el.parents(".page").find(".lot-name").html();
+        $("#remarks_product").val(product);
+        $("#remarks_lot").val(lot);
+
         $("#problem").prop("readonly", false);
-        remarkEl_temp = el.parents(".remarks").find("tbody")
+        remarkEl_temp = el.parents("div").find("table.remarks tbody:first");
         openFormRemark(url, date_time);
       });
 
       // ลงบันทึก remarks
-      $("body").on("click", "table.remarks tbody tr", function () {
+      $("body").on("click", "table.remarks tbody tr", function() {
         const el = $(this);
-        const url = el.parents(".menu-bar").find(".openFile").attr("href");
+        const url = el.parents(".page").find(".openFile").attr("href");
+        const list_selected = el.parents(".page").find(".select-menu").val();
         const date_time = el.find('td').eq(0).text();
         const problem = el.find('td').eq(1).text();
         const causes = el.find('td').eq(2).text();
         const amendments = el.find('td').eq(3).text();
         const note = el.find('td').eq(4).text();
 
-        $("#date_time").val(date_time);
-        $("#problem").val(problem);
-        $("#causes").val(causes);
-        $("#amendments").val(amendments);
-        $("#note").val(note);
-        $("#problem").prop("readonly", true);
-        remarkEl_temp = el;
-        openFormRemark(url, date_time);
+        const product = el.parents(".page").find(".product-name").html();
+        const lot = el.parents(".page").find(".lot-name").html();
+
+        if(list_selected.includes("เครื่องตอก")) {
+          $("#remarks_product").val(product);
+          $("#remarks_lot").val(lot);
+          $("#date_time").val(date_time);
+          $("#problem").val(problem);
+          $("#causes").val(causes);
+          $("#amendments").val(amendments);
+          $("#note").val(note);
+          $("#problem").prop("readonly", true);
+          remarkEl_temp = el;
+          openFormRemark(url, date_time);
+        };
       });
 
-      function openFormRemark(url, date_time) {
+      function openFormRemark(url, date_time){
         let username = localStorage.getItem("username");
         $("#remarks_url").val(url);
         $("#remark_timestamp").val(date_time);
-        $("#remarks_username").val(username);
         remarks_modal.show();
       };
 
-      $('#form_remarks').on('submit', function () {
+      $('#form_remarks').on('submit', function() {
         event.preventDefault();
         let element = $(this);
-        console.log(this)
         loadingStart("กำลังบันทึกข้อมูล", element);
-        google.script.run.withSuccessHandler((res) => {
-          console.log(res)
+        google.script.run.withSuccessHandler((res)=>{
           const newEl = `<td>${res.dataList[0]}</td>
-                          <td>${res.dataList[1]}</td>
-                          <td>${res.dataList[2]}</td>
-                          <td>${res.dataList[3]}</td>
-                          <td>${res.dataList[4]}</td>
-                          <td>${res.dataList[5]}</td>`;
+                        <td>${res.dataList[1]}</td>
+                        <td>${res.dataList[2]}</td>
+                        <td>${res.dataList[3]}</td>
+                        <td>${res.dataList[4]}</td>
+                        <td>${res.dataList[5]}</td>`;
 
-          if (res.result) {
+          if(res.result){
             remarkEl_temp.html(newEl);
-          } else {
+          }else{
             remarkEl_temp.append(`<tr>${newEl}</tr>`);
           };
 
@@ -1102,23 +1467,23 @@
 </script>
 
 <!-- ลงบันทึกค่าความหนาของเม็ดยา -->
-<script>
+<script> 
   let thickness_modal, thicknessEl_temp;
-  $(document).ready(function () {
+  $(document).ready(function() {
     thickness_modal = new bootstrap.Modal('#thickness_modal');
   });
-
+  
   // เพิ่มบันทึกค่าความหนาของเม็ดยา
-  function root_addThickness() {
-    $("body").on("click", '#weight_room tbody tr td:first-child', function (e) {
+  function root_addThickness() {  
+    $("body").on("click",'#weight_room tbody tr td:first-child', function (e) {
       const el = $(this);
       const date_time = el.text();
-      const url = el.parents(".menu-bar").find(".openFile").attr("href");
+      const url = el.parents(".page").find(".openFile").attr("href");
       thicknessEl_temp = el;
-
+      
       const thickness_timestamp = $('#weight_room_tickness tbody tr td:first-child').text();
 
-      if (thickness_timestamp.indexOf(date_time) < 0) {
+      if(thickness_timestamp.indexOf(date_time) < 0) {
         openFormThickness(url, date_time);
       } else {
         failed("ไม่สามารถแก้ไขได้")
@@ -1128,14 +1493,14 @@
 
   // แก้ไขบันทึกค่าความหนาของเม็ดยา
   function root_editThickness() {
-    $("body").on("click", '#weight_room_tickness tbody tr', function (e) {
+    $("body").on("click",'#weight_room_tickness tbody tr', function (e) {
       const el = $(this);
       const date_time = $(this).find('td:first-child').text();
-      const url = el.parents(".menu-bar").find(".openFile").attr("href");
+      const url = el.parents(".page").find(".openFile").attr("href");
       thicknessEl_temp = el;
 
       const form_thickness = $("#form_thickness input:not([type='hidden'])");
-      el.find("td").each((index, col) => {
+      el.find("td").each((index, col)=> {
         form_thickness.eq(index).val($(col).text())
       });
 
@@ -1143,50 +1508,50 @@
     });
   };
 
-  function openFormThickness(url, date_time) {
+  function openFormThickness(url, date_time){
     let username = localStorage.getItem("username");
     $("#thickness_url").val(url);
     $("#thickness_username").val(username);
     $("#thickness_timestamp").val(date_time);
-
+    
     thickness_modal.show();
   };
 
-  $('#form_thickness').on('submit', function () {
+  $('#form_thickness').on('submit', function() {
     event.preventDefault();
     let element = $(this);
 
     loadingStart("กำลังบันทึกข้อมูล", element);
-    google.script.run.withSuccessHandler((res) => {
+    google.script.run.withSuccessHandler((res)=>{
       let table = $("#weight_room_tickness");
       let min = parseFloat(table.find(".Thickness_min_max").data("min"));
       let max = parseFloat(table.find(".Thickness_min_max").data("max"));
       let newEl = `<td>${res.date_time}</td>`;
 
       res.dataList.forEach(data => {
-        if (data < min || data > max) {
+        if(data < min || data > max) {
           newEl += `<td style="color: red">${parseFloat(data).toFixed(2)}</td>`
         } else {
           newEl += `<td>${parseFloat(data).toFixed(2)}</td>`
-        };
+        };         
       });
 
       let editRow;
-      table.find('tr td:first-child').each((index, col) => {
+      table.find('tr td:first-child').each((index, col)=> {
         const el = $(col);
         const timestamp = el.text();
 
-        if (res.date_time == timestamp) {
+        if(res.date_time == timestamp) {
           el.parent().html(newEl);
           editRow = true;
           return;
         }
       });
 
-      if (!editRow) {
+      if(!editRow) {
         table.append(`<tr>${newEl}</tr>`);
       };
-
+      
       this.reset();
       thickness_modal.hide();
       loadingEnd(element);
@@ -1195,20 +1560,20 @@
   });
 </script>
 
-<!-- FUNCTION LOADING -->
+<!-- ฟังชั่นเสริม -->
 <script>
   function loadingStart(message, element) {
-    if (element) {
+    if(element){
       element.parents('.loading-relative').find(".loadingText").html(message);
       element.parents('.loading-relative').find(".loading").removeClass("invisible");
     } else {
       $(".loadingText").html("กำลังโหลด");
       $(".loading").removeClass("invisible");
-    };
+    };   
   };
 
   function loadingEnd(element) {
-    if (element) {
+    if(element){
       element.parents('.loading-relative').find(".loading").addClass("invisible");
     } else {
       $(".loading").addClass("invisible");
@@ -1234,21 +1599,28 @@
       timer: 2000,
       timerProgressBar: false,
     });
-
+    
     Toast.fire({
       icon: 'success',
       title: 'บันทึกข้อมูลเรียบร้อยแล้ว'
     });
   };
 
-  function failed(message) {
-    message ? message : 'เกิดข้อผิดพลาด กรุณาลองอีกคร้ง';
+  function failed(title, message) {
+    title ? title:'เกิดข้อผิดพลาด กรุณาลองอีกคร้ง';
+    message ? message:'';
     Swal.fire({
       position: 'center',
       icon: 'error',
-      title: message,
+      title: title,
+      text: message,
       showConfirmButton: false,
-      timer: 1500
+      timer: 3500
     });
+  }
+  
+  //********* ส่งไลน์
+  function sendLineNotify(message) {
+    google.script.run.sendLineNotify(message)
   }
 </script>

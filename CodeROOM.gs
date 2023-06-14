@@ -8,7 +8,7 @@ function getCurrentData_ROOM(url) {
 
     let result = {
       url: url,
-      remarks: sheetRemarksROOM.getDataRange().getDisplayValues().slice(2),
+      remarks: sheetRemarksROOM.getDataRange().getDisplayValues().slice(2).reverse(),
       setup: sheetSetupROOM.getRange(globalVariables().setupRangeROOM).getDisplayValues(),
       data: sheetROOM.getDataRange().getDisplayValues().slice(4).reverse(),
       colors: sheetROOM.getDataRange().getBackgrounds().slice(4).reverse()
@@ -36,7 +36,7 @@ function recodeCharacteristics(url, date_time, value) {
   };
 }
 
-// บันทึกค่าคสามหนาของเม็ดยา
+// บันทึกค่าความหนาของเม็ดยา
 function recordThickness(form) {
   let ss = SpreadsheetApp.openByUrl(form.thickness_url);
   let sheet = ss.getSheetByName(globalVariables().shWeightROOM);
@@ -73,5 +73,51 @@ function addChecker(url, username) {
 
 // สิ้นสุดการผลิต
 function endJob_ROOM(url, username) {
+  let ss = SpreadsheetApp.openByUrl(url);
+  let today = new Date().toLocaleString('en-GB', { timeZone: 'Asia/Jakarta' });
+  let date = today.split(",")[0];
 
-}
+  let shSetWeight = ss.getSheetByName(globalVariables().shSetWeight);
+  let tabletID = shSetWeight.getRange('A2').getDisplayValue();
+  let productName = shSetWeight.getRange('A4').getDisplayValue();
+  let lot = shSetWeight.getRange('A5').getDisplayValue();
+
+  // บันทึกคนที่กด ENDJOB
+  shSetWeight.getRange('A15').setValue("จบการผลิตโดย " + username + " วันที่ " + today);
+  
+  // บันทึกการปฏิบัติงาน
+  let detail = `ระบบเครื่องชั่ง: 10 เม็ด\
+                \nชื่อยา: ${productName}\
+                \nเลขที่ผลิต: ${lot}\
+                \nเครื่องตอก: ${tabletID}`;
+
+  audit_trail("จบการผลิต", detail, username);
+
+  // จัดเก็บข้อมูลไปยังโฟล์เดอร์
+  let folder = DriveApp.getFolderById(globalVariables().folderIdROOM);
+  let newSh = ss.copy(tabletID + "_" + productName + "_LOT" + lot + "_" + date);
+  let shID = newSh.getId(); // get newSheetID
+  let file = DriveApp.getFileById(shID);
+
+  folder.addFile(file); // ย้ายไฟล์ไปยังแฟ้มเก็บข้อมูล
+  
+  // ลบชีตที่ไม่ใช่ชีตหลักออก
+  let shName = ss.getSheets();
+  for (i = 0; i < shName.length; i++) {
+    let sh = shName[i].getName();
+    if (sh == "WEIGHT" || sh == "กราฟ" || sh == "Remark" || sh == "Setting") {
+      continue;
+    } else {
+      ss.deleteSheet(shName[i]);
+    }
+  };
+  
+  ss.getSheetByName(globalVariables().shWeightROOM).getRange("A5:S").clearContent();
+  ss.getSheetByName(globalVariables().shRemarks).getRange("A3:F").clearContent();
+  ss.getSheetByName(globalVariables().shSetWeight).getRange("A3:A15").setValue("xxxxx");
+
+  return getCurrentData_ROOM(url);
+};
+
+
+

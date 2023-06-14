@@ -18,17 +18,56 @@
   <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
   <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
 
-  <!-- datatable CSS -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.2.0/css/bootstrap.min.css" />
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" />
-
   <!-- sweetalert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+  <!-- datatable CSS -->
+  <?!= include('DataTable_CSS'); ?>
   <?!= include('CSS'); ?>
 </head>
 
 <body>
+  <!-- loading endjob -->
+  <div class="loading-endjob d-none">
+    <svg xmlns="http://www.w3.org/2000/svg" height="200px" width="200px" viewBox="0 0 200 200" class="pencil">
+      <defs>
+        <clipPath id="pencil-eraser">
+          <rect height="30" width="30" ry="5" rx="5"></rect>
+        </clipPath>
+      </defs>
+      <circle transform="rotate(-113,100,100)" stroke-linecap="round" stroke-dashoffset="439.82"
+        stroke-dasharray="439.82 439.82" stroke-width="2" stroke="currentColor" fill="none" r="70"
+        class="pencil__stroke">
+      </circle>
+      <g transform="translate(100,100)" class="pencil__rotate">
+        <g fill="none">
+          <circle transform="rotate(-90)" stroke-dashoffset="402" stroke-dasharray="402.12 402.12" stroke-width="30"
+            stroke="hsl(223,90%,50%)" r="64" class="pencil__body1"></circle>
+          <circle transform="rotate(-90)" stroke-dashoffset="465" stroke-dasharray="464.96 464.96" stroke-width="10"
+            stroke="hsl(223,90%,60%)" r="74" class="pencil__body2"></circle>
+          <circle transform="rotate(-90)" stroke-dashoffset="339" stroke-dasharray="339.29 339.29" stroke-width="10"
+            stroke="hsl(223,90%,40%)" r="54" class="pencil__body3"></circle>
+        </g>
+        <g transform="rotate(-90) translate(49,0)" class="pencil__eraser">
+          <g class="pencil__eraser-skew">
+            <rect height="30" width="30" ry="5" rx="5" fill="hsl(223,90%,70%)"></rect>
+            <rect clip-path="url(#pencil-eraser)" height="30" width="5" fill="hsl(223,90%,60%)"></rect>
+            <rect height="20" width="30" fill="hsl(223,10%,90%)"></rect>
+            <rect height="20" width="15" fill="hsl(223,10%,70%)"></rect>
+            <rect height="20" width="5" fill="hsl(223,10%,80%)"></rect>
+            <rect height="2" width="30" y="6" fill="hsla(223,10%,10%,0.2)"></rect>
+            <rect height="2" width="30" y="13" fill="hsla(223,10%,10%,0.2)"></rect>
+          </g>
+        </g>
+        <g transform="rotate(-90) translate(49,-30)" class="pencil__point">
+          <polygon points="15 0,30 30,0 30" fill="hsl(33,90%,70%)"></polygon>
+          <polygon points="15 0,6 30,0 30" fill="hsl(33,90%,50%)"></polygon>
+          <polygon points="15 0,20 10,10 10" fill="hsl(223,10%,10%)"></polygon>
+        </g>
+      </g>
+    </svg>
+  </div>
+
   <!-- หน้า login -->
   <?!= include('Login'); ?>
 
@@ -37,8 +76,13 @@
     <nav class="navbar bg-primary sticky-top py-1">
       <div class="container-fluid">
         <a class="navbar-brand text-white fw-bold fs-3 mx-2">Polipharm</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar"
-          aria-controls="offcanvasNavbar">
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="offcanvas"
+          data-bs-target="#offcanvasNavbar"
+          aria-controls="offcanvasNavbar"
+        >
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
@@ -46,27 +90,35 @@
             <h5 class="offcanvas-title fw-bolder text-decoration-underline" id="offcanvasNavbarLabel">
               โปรแกรมบันทึกข้อมูลน้ำหนักยา
             </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="offcanvas"
+              aria-label="Close"
+            ></button>
           </div>
           <div class="offcanvas-body">
             <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
-              <li class="nav-item mx-3" id="page1_menu">
+              <li class="nav-item mx-3 page-menu" id="page1_menu">
                 <a class="nav-link">หน้าหลัก</a>
               </li>
-              <li class="nav-item mx-3" id="page2_menu">
+              <li class="nav-item mx-3 page-menu" id="page2_menu">
                 <a class="nav-link">ตารางข้อมูลน้ำหนักยา IPC</a>
               </li>
-              <li class="nav-item mx-3" id="page3_menu">
-                <a class="nav-link">ตารางข้อมูลน้ำหนักยา ROOM</a>
+              <li class="nav-item mx-3 page-menu" id="page3_menu">
+                <a class="nav-link">ตารางข้อมูลน้ำหนักยา 10 เม็ด</a>
               </li>
-              <li class="nav-item mx-3 root-superuser root-admin d-none" id="page4_menu">
+              <li class="nav-item mx-3 page-menu root-admin root-superuser d-none" id="page4_menu">
                 <a class="nav-link">ตั้งค่าน้ำหนักยาของเครื่องตอก</a>
               </li>
-              <li class="nav-item mx-3 root-superuser d-none" id="page5_menu">
+              <li class="nav-item mx-3 page-menu root-admin d-none" id="page5_menu">
                 <a class="nav-link">แก้ไขฐานข้อมูลน้ำหนักยา</a>
               </li>
-              <li class="nav-item mx-3 root-superuser d-none" id="page6_menu">
+              <li class="nav-item mx-3 page-menu root-admin d-none" id="page6_menu">
                 <a class="nav-link">แก้ไขรายชื่อผู้ปฏิบัติงาน</a>
+              </li>
+              <li class="nav-item mx-3 page-menu root-admin d-none auditTrail-page" id="page7_menu">
+                <a class="nav-link">บันทึกการปฏิบัติงาน</a>
               </li>
             </ul>
           </div>
@@ -80,14 +132,14 @@
     </nav>
 
     <!-- หน้าหลัก -->
-    <div id="page1" class="menu-bar container mt-4">
+    <div id="page1" class="page container-xl mt-4">
       <h4 id="welcome" class="text-center bg-secondary p-2 text-white rounded"></h4>
       <iframe style="border:none" width="100%" height="800"
         src="https://whimsical.com/embed/RLsLUSn5w5v9VKw5bFDJbM"></iframe>
     </div>
 
     <!-- ตารางข้อมูลน้ำหนักยา IPC -->
-    <div id="page2" class="menu-bar container-xl mt-4 d-none">
+    <div id="page2" class="page container-xl mt-4 d-none">
       <h3 class="text-center text-decoration-underline">
         การควบคุมน้ำหนักเฉลี่ย (AVERAGE WEIGHT)
       </h3>
@@ -100,7 +152,7 @@
         <div class="menu-select gap-2 row">
           <div class="loading-relative">
             <div class="input-group">
-              <input type="text" id="selectedMenu_ipc" class="form-control" placeholder="กรอกข้อมูล...">
+              <input type="text" id="selectedMenu_ipc" class="form-control select-menu" placeholder="กรอกข้อมูล...">
               <button class="btn btn-danger clear-select" type="button">
                 <i class="fa-solid fa-xmark"></i>
               </button>
@@ -135,12 +187,25 @@
         </div>
       </div>
 
-      <div id="weight_ipc_div"></div>
-      <div id="remarks_ipc_div"></div>
+      <div id="weight_detail_ipc"></div>
+
+      <div class="table-div-ipc">
+        <div id="weight_ipc_div"></div>
+
+        <div class="table-title-remarks fw-bolder mt-5 p-2 d-none" style="position: relative;">
+          Remarks
+          <button type="button" class="btn btn-warning add-remarks px-3 root-admin root-superuser" 
+            style="position: absolute; top: 3px; right: 10px;">
+            <i class="fa-solid fa-plus"></i>
+              ลงปันทึก
+          </button>
+        </div>
+        <div id="remarks_ipc_div" class="table-div-remarks mb-3"></div>
+      </div>
     </div>
 
     <!-- ตารางข้อมูลน้ำหนักยา 10 เม็ด -->
-    <div id="page3" class="menu-bar container-xl mt-4 d-none">
+    <div id="page3" class="page container-xl mt-4 d-none">
       <h3 class="text-center text-decoration-underline mb-4">
         ตารางข้อมูลน้ำหนักยา 10 เม็ด
       </h3>
@@ -150,7 +215,7 @@
         <div class="menu-select gap-2 row">
           <div class="loading-relative">
             <div class="input-group">
-              <input type="text" id="selectedMenu_room" class="form-control" placeholder="กรอกข้อมูล...">
+              <input type="text" id="selectedMenu_room" class="form-control select-menu" placeholder="กรอกข้อมูล...">
               <button class="btn btn-danger clear-select" type="button">
                 <i class="fa-solid fa-xmark"></i>
               </button>
@@ -186,21 +251,31 @@
 
       <div id="weight_detail_room"></div>
 
-      <div id="chartJS"></div>
-      <div id="WeightTableRoom_weight" class="mt-5 mb-3"></div>
-      <div id="WeightTableRoom_tickness" class="mt-5 mb-3"></div>
-      <div id="WeightTableRoom_remarks" class="mt-5 mb-3"></div>
+      <div class="table-div-room">
+        <div id="chartJS"></div>
+        <div id="WeightTableRoom_weight" class="mt-5 mb-3"></div>
+        <div id="WeightTableRoom_tickness" class="mt-5 mb-3"></div>
+        <div class="table-title-remarks fw-bolder mt-5 p-2 d-none" style="position: relative;">
+          Remarks
+          <button type="button" class="btn btn-warning add-remarks px-3 root-admin root-superuser" 
+            style="position: absolute; top: 3px; right: 10px;">
+            <i class="fa-solid fa-plus"></i>
+              ลงปันทึก
+          </button>
+        </div>
+        <div id="remarks_room_div" class="table-div-remarks mb-3"></div>
+      </div>
     </div>
 
     <!-- ตั้งค่าน้ำหนักยาของเครื่องตอก -->
-    <div id="page4" class="menu-bar container mt-4 d-none">
+    <div id="page4" class="page container mt-4 d-none">
       <h2 class="text-center fw-bolder text-decoration-underline mb-4">
         ตั้งค่าน้ำหนักยาของเครื่องตอก
       </h2>
     </div>
 
     <!-- แก้ไขฐานข้อมูลน้ำหนักยา -->
-    <div id="page5" class="menu-bar container mt-4 d-none">
+    <div id="page5" class="page container mt-4 d-none">
       <h2 class="text-center fw-bolder text-decoration-underline mb-4">
         แก้ไขฐานข้อมูลน้ำหนักยา
       </h2>
@@ -216,17 +291,29 @@
           <div class="d-flex justify-content-center">
             <div class="form-title d-grid gap-2">
               <div class="p-2 bg-info bg-opacity-10 border border-info rounded">
-                <input type="text" class="form-control" id="ProductName_form" name="ProductName_form"
-                  placeholder="พิมชื่อยา..." required />
+                <input
+                  type="text"
+                  class="form-control"
+                  id="ProductName_form"
+                  name="ProductName_form"
+                  placeholder="พิมชื่อยา..."
+                  required
+                />
               </div>
               <div class="form-edit-div p-2 bg-info bg-opacity-10 border border-info rounded">
-                <input type="text" class="form-control" id="Lot_form" name="Lot_form" placeholder="เลขที่ผลิต..."
-                  required />
+                <input
+                  type="text"
+                  class="form-control"
+                  id="Lot_form"
+                  name="Lot_form"
+                  placeholder="เลขที่ผลิต..."
+                  required
+                />
               </div>
               <div class="form-edit-div p-2 bg-info bg-opacity-10 border border-info rounded">
-                <select class="form-select" id="TabletID_form" name="TabletID_form" required>
-                  <option value="" selected disabled>เครื่องตอก...</option>
-                </select>
+                <select  class="form-select" id="TabletID_form" name="TabletID_form" required>
+                <option value="" selected disabled>เครื่องตอก...</option>
+              </select>
               </div>
             </div>
           </div>
@@ -240,22 +327,36 @@
               <div class="form-edit-div d-flex justify-content-center mt-3 mb-3">
                 <div class="form-title d-grid gap-2">
                   <div class="p-2 bg-secondary bg-opacity-10 border border-secondary rounded">
-                    <select class="form-select Scales_form" id="ScalesROOM_form" name="ScalesROOM_form" required>
-                      <option value="" selected disabled>หมายเลขเครื่องชั่ง...</option>
-                    </select>
+                    <select  class="form-select Scales_form" id="ScalesROOM_form" name="ScalesROOM_form" required>
+                    <option value="" selected disabled>หมายเลขเครื่องชั่ง...</option>
+                  </select>
                   </div>
                 </div>
               </div>
               <a class="text-decoration-underline">น้ำหนักทางทฤษฎี 10 เม็ด</a>
               <div class="row">
                 <div class="col input-group my-2 pe-1">
-                  <input type="number" class="form-control weight-setup" id="WeightRoom_form" name="WeightRoom_form"
-                    step="0.001" placeholder="น้ำหนัก" required />
+                  <input
+                    type="number"
+                    class="form-control weight-setup"
+                    id="WeightRoom_form"
+                    name="WeightRoom_form"
+                    step="0.001"
+                    placeholder="น้ำหนัก"
+                    required
+                  />
                   <span class="input-group-text">g</span>
                 </div>
                 <div class="col input-group my-2 ps-1">
-                  <input type="number" class="form-control weight-setup" id="PercentageRoom_form"
-                    name="PercentageRoom_form" step="0.01" placeholder="% นน." required />
+                  <input
+                    type="number"
+                    class="form-control weight-setup"
+                    id="PercentageRoom_form"
+                    name="PercentageRoom_form"
+                    step="0.01"
+                    placeholder="% นน."
+                    required
+                  />
                   <span class="input-group-text">%</span>
                 </div>
               </div>
@@ -263,13 +364,27 @@
               <a class="text-decoration-underline">ช่วงน้ำหนัก 10 เม็ด Min-Max</a>
               <div class="row">
                 <div class="col input-group my-2 pe-1">
-                  <input type="number" class="form-control weight-setup" id="MinRoom_form" name="MinRoom_form"
-                    step="0.001" placeholder="Min..." required />
+                  <input
+                    type="number"
+                    class="form-control weight-setup"
+                    id="MinRoomControl_form"
+                    name="MinRoomControl_form"
+                    step="0.001"
+                    placeholder="Min..."
+                    required
+                  />
                   <span class="input-group-text">g</span>
                 </div>
                 <div class="col input-group my-2 ps-1">
-                  <input type="number" class="form-control weight-setup" id="MaxRoom_form" name="MaxRoom_form"
-                    step="0.001" placeholder="Max..." required />
+                  <input
+                    type="number"
+                    class="form-control weight-setup"
+                    id="MaxRoomControl_form"
+                    name="MaxRoomControl_form"
+                    step="0.001"
+                    placeholder="Max..."
+                    required
+                  />
                   <span class="input-group-text">g</span>
                 </div>
               </div>
@@ -277,13 +392,27 @@
               <a class="text-decoration-underline">เกณฑ์การยอมรับทะเบียน Min-Max</a>
               <div class="row">
                 <div class="col input-group my-2 pe-1">
-                  <input type="number" class="form-control weight-setup" id="MinRoomControl_form"
-                    name="MinRoomControl_form" step="0.001" placeholder="Min..." required />
+                  <input
+                    type="number"
+                    class="form-control weight-setup"
+                    id="MinDvtRoom_form"
+                    name="MinDvtRoom_form"
+                    step="0.001"
+                    placeholder="Min..."
+                    required
+                  />
                   <span class="input-group-text">g</span>
                 </div>
                 <div class="col input-group my-2 ps-1">
-                  <input type="number" class="form-control weight-setup" id="MaxRoomControl_form"
-                    name="MaxRoomControl_form" step="0.001" placeholder="Max..." required />
+                  <input
+                    type="number"
+                    class="form-control weight-setup"
+                    id="MaxDvtRoom_form"
+                    name="MaxDvtRoom_form"
+                    step="0.001"
+                    placeholder="Max..."
+                    required
+                  />
                   <span class="input-group-text">g</span>
                 </div>
               </div>
@@ -291,13 +420,27 @@
               <a class="text-decoration-underline">ความหนาของเม็ดยา mm.</a>
               <div class="row">
                 <div class="col input-group my-2 pe-1">
-                  <input type="number" class="form-control weight-setup" id="MinThicknessRoom_form"
-                    name="MinThicknessRoom_form" step="0.01" placeholder="Min..." required />
+                  <input
+                    type="number"
+                    class="form-control weight-setup"
+                    id="MinThicknessRoom_form"
+                    name="MinThicknessRoom_form"
+                    step="0.01"
+                    placeholder="Min..."
+                    required
+                  />
                   <span class="input-group-text">mm.</span>
                 </div>
                 <div class="col input-group my-2 ps-1">
-                  <input type="number" class="form-control weight-setup" id="MaxThicknessRoom_form"
-                    name="MaxThicknessRoom_form" step="0.01" placeholder="Max..." required />
+                  <input
+                    type="number"
+                    class="form-control weight-setup"
+                    id="MaxThicknessRoom_form"
+                    name="MaxThicknessRoom_form"
+                    step="0.01"
+                    placeholder="Max..."
+                    required
+                  />
                   <span class="input-group-text">mm.</span>
                 </div>
               </div>
@@ -313,9 +456,9 @@
               <div class="form-edit-div d-flex justify-content-center mt-3 mb-3">
                 <div class="form-title d-grid gap-2">
                   <div class="p-2 bg-secondary bg-opacity-10 border border-secondary rounded">
-                    <select class="form-select Scales_form" id="ScalesIPC_form" name="ScalesIPC_form" required>
-                      <option value="" selected disabled>หมายเลขเครื่องชั่ง...</option>
-                    </select>
+                    <select  class="form-select Scales_form" id="ScalesIPC_form" name="ScalesIPC_form" required>
+                    <option value="" selected disabled>หมายเลขเครื่องชั่ง...</option>
+                  </select>
                   </div>
                 </div>
               </div>
@@ -324,13 +467,25 @@
                 <a class="text-decoration-underline">จำนวนเม็ดที่ต้องชั่ง,จำนวนสาก</a>
                 <div class="row">
                   <div class="col input-group my-2 pe-1">
-                    <input type="number" class="form-control" id="NumberTabletsIPC_form" name="NumberTabletsIPC_form"
-                      placeholder="จำนวนเม็ด..." required />
+                    <input
+                    type="number"
+                    class="form-control"
+                    id="NumberTabletsIPC_form"
+                    name="NumberTabletsIPC_form"
+                    placeholder="จำนวนเม็ด..."
+                    required
+                  />
                     <span class="input-group-text">เม็ด</span>
                   </div>
                   <div class="col input-group my-2 ps-1">
-                    <input type="number" class="form-control" id="NumberPastleIPC_form" name="NumberPastleIPC_form"
-                      placeholder="จำนวนสาก..." required />
+                    <input
+                    type="number"
+                    class="form-control"
+                    id="NumberPastleIPC_form"
+                    name="NumberPastleIPC_form"
+                    placeholder="จำนวนสาก..."
+                    required
+                  />
                     <span class="input-group-text">สาก</span>
                   </div>
                 </div>
@@ -338,66 +493,128 @@
               <a class="text-decoration-underline">น้ำหนักตอก/เม็ด</a>
               <div class="row">
                 <div class="col input-group my-2 pe-1">
-                  <input type="number" class="form-control weight-setup" id="WeightIPC_form" name="WeightIPC_form"
-                    step="0.001" placeholder="น้ำหนัก" required />
+                  <input
+                    type="number"
+                    class="form-control weight-setup"
+                    id="WeightIPC_form"
+                    name="WeightIPC_form"
+                    step="0.001"
+                    placeholder="น้ำหนัก"
+                    required
+                  />
                   <span class="input-group-text">g</span>
                 </div>
                 <div class="col input-group my-2 ps-1">
-                  <input type="number" class="form-control weight-setup" id="PercentageIPC_form"
-                    name="PercentageIPC_form" step="0.01" placeholder="% นน." required />
+                  <input
+                    type="number"
+                    class="form-control weight-setup"
+                    id="PercentageIPC_form"
+                    name="PercentageIPC_form"
+                    step="0.01"
+                    placeholder="% นน."
+                    required
+                  />
                   <span class="input-group-text">%</span>
                 </div>
               </div>
               <a class="text-decoration-underline">ค่าน้ำหนักเฉลี่ยที่ยอมรับ Min-Max</a>
               <div class="row">
                 <div class="col input-group my-2 pe-1">
-                  <input type="number" class="form-control weight-setup" id="MinAvgIPC_form" name="MinAvgIPC_form"
-                    step="0.001" placeholder="Min..." required />
+                  <input
+                    type="number"
+                    class="form-control weight-setup"
+                    id="MinAvgIPC_form"
+                    name="MinAvgIPC_form"
+                    step="0.001"
+                    placeholder="Min..."
+                    required
+                  />
                   <span class="input-group-text">g</span>
                 </div>
                 <div class="col input-group my-2 ps-1">
-                  <input type="number" class="form-control weight-setup" id="MaxAvgIPC_form" name="MaxAvgIPC_form"
-                    step="0.001" placeholder="Max..." required />
+                  <input
+                    type="number"
+                    class="form-control weight-setup"
+                    id="MaxAvgIPC_form"
+                    name="MaxAvgIPC_form"
+                    step="0.001"
+                    placeholder="Max..."
+                    required
+                  />
                   <span class="input-group-text">g</span>
                 </div>
               </div>
               <a class="text-decoration-underline">ช่วงน้ำหนักเบี่ยงเบนที่ยอมรับ Min-Max</a>
               <div class="row">
                 <div class="col input-group my-2 pe-1">
-                  <input type="number" class="form-control weight-setup" id="MinDvtIPC_form" name="MinDvtIPC_form"
-                    step="0.001" placeholder="Min..." required />
+                  <input
+                    type="number"
+                    class="form-control weight-setup"
+                    id="MinControlIPC_form"
+                    name="MinControlIPC_form"
+                    step="0.001"
+                    placeholder="Min..."
+                    required
+                  />
                   <span class="input-group-text">g</span>
                 </div>
                 <div class="col input-group my-2 ps-1">
-                  <input type="number" class="form-control weight-setup" id="MaxDvtIPC_form" name="MaxDvtIPC_form"
-                    step="0.001" placeholder="Max..." required />
+                  <input
+                    type="number"
+                    class="form-control weight-setup"
+                    id="MaxControlIPC_form"
+                    name="MaxControlIPC_form"
+                    step="0.001"
+                    placeholder="Max..."
+                    required
+                  />
                   <span class="input-group-text">g</span>
                 </div>
               </div>
               <a class="text-decoration-underline">เกณฑ์การยอมรับทะเบียน Min-Max</a>
               <div class="row">
                 <div class="col input-group my-2 pe-1">
-                  <input type="number" class="form-control weight-setup" id="MinControlIPC_form"
-                    name="MinControlIPC_form" step="0.001" placeholder="Min..." required />
+                  <input
+                    type="number"
+                    class="form-control weight-setup"
+                    id="MinDvtIPC_form"
+                    name="MinDvtIPC_form"
+                    step="0.001"
+                    placeholder="Min..."
+                    required
+                  />
                   <span class="input-group-text">g</span>
                 </div>
                 <div class="col input-group my-2 ps-1">
-                  <input type="number" class="form-control weight-setup" id="MaxControlIPC_form"
-                    name="MaxControlIPC_form" step="0.001" placeholder="Max..." required />
+                  <input
+                    type="number"
+                    class="form-control weight-setup"
+                    id="MaxDvtIPC_form"
+                    name="MaxDvtIPC_form"
+                    step="0.001"
+                    placeholder="Max..."
+                    required
+                  />
                   <span class="input-group-text">g</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- ผู้แก้ไข -->
-          <input class="Username" id="AdminEdit_form" type="hidden" name="AdminEdit_form" />
           <div class="my-2 mb-3">
-            <button type="submit" class="btn btn-success" id="submitEditProductBtn">
+            <button
+              type="submit"
+              class="btn btn-success"
+              id="submitEditProductBtn"
+            >
               <i class="fa-solid fa-pen-to-square"></i>
               บันทึกการตั้งค่า
             </button>
-            <button class="btn btn-success d-none" id="submitEditProductBtn_waiting" disabled>
+            <button
+              class="btn btn-success d-none"
+              id="submitEditProductBtn_waiting"
+              disabled
+            >
               <i class="fa-solid fa-spinner fa-spin-pulse"></i>
               กำลังบันทึก...
             </button>
@@ -436,7 +653,7 @@
     </div>
 
     <!-- แก้ไขรายชื่อผู้ปฏิบัติงาน -->
-    <div id="page6" class="menu-bar container mt-4 d-none">
+    <div id="page6" class="page container mt-4 d-none">
       <h2 class="text-center fw-bolder text-decoration-underline mb-4">
         แก้ไขรายชื่อผู้ปฏิบัติงาน
       </h2>
@@ -444,6 +661,7 @@
         <ol>
           <li class="lh-lg">ต้องการแก้ไขข้อมูลให้ทำการเลือกที่ รายชือพนักงาน</li>
           <li class="lh-lg">ต้องการเพิ่มข้อมูลให้กรอกข้อมูลแล้วกดบันทึก</li>
+          <li class="lh-lg">ต้องการลบข้อมูลให้ทำการเลือกที่ รายชือพนักงาน แล้วกดลบผู้ใช้งาน</li>
           <li class="lh-lg">ต้องการเคลียร์ฟอร์มกดยกเลิก</li>
         </ol>
       </div>
@@ -451,38 +669,93 @@
         <form id="form_editUser" class="form-title">
           <div class="d-grid gap-2 col-12">
             <div class="p-2 bg-primary bg-opacity-10 border border-primary rounded">
-              <select class="form-select" id="userNames_list" name="userNames_list">
+              <select
+                class="form-select"
+                id="userNames_list"
+                name="userNames_list"
+              >
                 <option disabled value="" selected>รายชื่อพนักงาน...</option>
               </select>
             </div>
+            <button type="button" id="deleteUserBtn" class="btn btn-danger">
+              <i class="fa-solid fa-trash-can"></i>
+              ลบผู้ใช้งาน
+            </button>
             <h4 class="text-center mt-3">ข้อมูลในระบบ</h4>
-            <input type="number" class="form-control userEdit" id="rfid_input" name="rfid_input" placeholder="RFID..."
-              required />
-            <input type="number" class="form-control userEdit" id="employeeID_input" name="employeeID_input"
-              placeholder="รหัสพนักงาน..." required />
-            <input type="text" class="form-control userEdit" id="userNameTH_input" name="userNameTH_input"
-              placeholder="ชื่อภาษาไทย..." required />
-            <input type="text" class="form-control userEdit" id="userNameEN" name="userNameEN"
-              placeholder="ชื่อภาษาอังกฤษ..." required />
-            <input type="number" class="form-control userEdit" id="userPassword" name="userPassword"
-              placeholder="รหัสผ่าน..." required />
+            <a class="text-decoration-underline">RFID</a>
+            <input
+              type="number"
+              class="form-control userEdit"
+              id="rfid_input"
+              name="rfid_input"
+              placeholder="RFID..."
+              required
+            />
+            <a class="text-decoration-underline">รหัสพนักงาน</a>
+            <input
+              type="number"
+              class="form-control userEdit"
+              id="employeeID_input"
+              name="employeeID_input"
+              placeholder="รหัสพนักงาน..."
+              required
+            />
+            <a class="text-decoration-underline">ชื่อภาษาไทย</a>
+            <input
+              type="text"
+              class="form-control userEdit"
+              id="userNameTH_input"
+              name="userNameTH_input"
+              placeholder="ชื่อภาษาไทย..."
+              required
+            />
+            <a class="text-decoration-underline">ชื่อภาษาอังกฤษ</a>
+            <input
+              type="text"
+              class="form-control userEdit"
+              id="userNameEN"
+              name="userNameEN"
+              placeholder="ชื่อภาษาอังกฤษ..."
+              required
+            />
+            <a class="text-decoration-underline">รหัสผ่าน</a>
+            <input
+              type="number"
+              class="form-control userEdit"
+              id="userPassword"
+              name="userPassword"
+              placeholder="รหัสผ่าน..."
+              required
+            />
+            <a class="text-decoration-underline">สิทธิการใช้งาน</a>
             <select class="form-select userEdit" id="userRoot" name="userRoot" required>
               <option value="" disabled selected>สิทธิการใช้งาน...</option>
-              <option value="Superuser">Superuser</option>
               <option value="Admin">Admin</option>
+              <option value="Superuser">Superuser</option>
               <option value="Operator">Operator</option>
               <option value="User">User</option>
             </select>
             <div class="my-2">
-              <button type="submit" class="btn btn-success" id="submitEditUserBtn">
+              <button
+                type="submit"
+                class="btn btn-success"
+                id="submitEditUserBtn"
+              >
                 <i class="fa-solid fa-pen-to-square"></i>
                 บันทึก
               </button>
-              <button class="btn btn-success d-none" id="submitEditUserBtn_waiting" disabled>
+              <button
+                class="btn btn-success d-none"
+                id="submitEditUserBtn_waiting"
+                disabled
+              >
                 <i class="fa-solid fa-spinner fa-spin-pulse"></i>
                 กำลังบันทึก...
               </button>
-              <button type="reset" class="btn btn-danger">
+              <button
+                type="reset"
+                class="btn btn-danger"
+              >
                 ยกเลิก
               </button>
             </div>
@@ -515,6 +788,17 @@
         </div>
       </div>
     </div>
+
+    <!-- บันทึกการปฏิบัติงาน -->
+    <div id="page7" class="page container-xl mt-4 d-none">
+      <div class="d-flex justify-content-center">
+        <button type="button" id="update_auditTrail" class="btn btn-secondary px-4">
+          <i class="fa-solid fa-arrows-rotate"></i>
+          อัพเดทข้อมูล
+        </button>
+      </div>
+      <div id="auditTrail_div" class="my-5"></div>
+    </div>
   </div>
 
   <!-- Thickness Modal -->
@@ -531,78 +815,67 @@
             <input type="hidden" class="form-control" id="thickness_username" name="thickness_username">
             <div class="mb-3 mx-5">
               <h5 for="thickness_timestamp" class="form-label text-center">วันที่, เวลา</h5>
-              <input type="text" class="text-center form-control" id="thickness_timestamp" name="thickness_timestamp"
-                readonly>
+              <input type="text" class="text-center form-control" id="thickness_timestamp" name="thickness_timestamp" readonly>
             </div>
             <div class="row">
               <div class="col input-group my-2 pe-1">
-                <input type="number" class="form-control weight-setup" id="thickness1" name="thickness1" step="0.01"
-                  placeholder="ครั้งที่1..." required>
+                <input type="number" class="form-control weight-setup" id="thickness1" name="thickness1" step="0.01" placeholder="ครั้งที่1..." required>
                 <span class="input-group-text">mm.</span>
               </div>
               <div class="col input-group my-2 ps-1">
-                <input type="number" class="form-control weight-setup" id="thickness2" name="thickness2" step="0.01"
-                  placeholder="ครั้งที่2..." required>
-                <span class="input-group-text">mm.</span>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col input-group my-2 pe-1">
-                <input type="number" class="form-control weight-setup" id="thickness3" name="thickness3" step="0.01"
-                  placeholder="ครั้งที่3..." required>
-                <span class="input-group-text">mm.</span>
-              </div>
-              <div class="col input-group my-2 ps-1">
-                <input type="number" class="form-control weight-setup" id="thickness4" name="thickness4" step="0.01"
-                  placeholder="ครั้งที่4..." required>
+                <input type="number" class="form-control weight-setup" id="thickness2" name="thickness2" step="0.01" placeholder="ครั้งที่2..." required>
                 <span class="input-group-text">mm.</span>
               </div>
             </div>
             <div class="row">
               <div class="col input-group my-2 pe-1">
-                <input type="number" class="form-control weight-setup" id="thickness5" name="thickness5" step="0.01"
-                  placeholder="ครั้งที่5..." required>
+                <input type="number" class="form-control weight-setup" id="thickness3" name="thickness3" step="0.01" placeholder="ครั้งที่3..." required>
                 <span class="input-group-text">mm.</span>
               </div>
               <div class="col input-group my-2 ps-1">
-                <input type="number" class="form-control weight-setup" id="thickness6" name="thickness6" step="0.01"
-                  placeholder="ครั้งที่6..." required>
+                <input type="number" class="form-control weight-setup" id="thickness4" name="thickness4" step="0.01" placeholder="ครั้งที่4..." required>
                 <span class="input-group-text">mm.</span>
               </div>
             </div>
             <div class="row">
               <div class="col input-group my-2 pe-1">
-                <input type="number" class="form-control weight-setup" id="thickness7" name="thickness7" step="0.01"
-                  placeholder="ครั้งที่7..." required>
+                <input type="number" class="form-control weight-setup" id="thickness5" name="thickness5" step="0.01" placeholder="ครั้งที่5..." required>
                 <span class="input-group-text">mm.</span>
               </div>
               <div class="col input-group my-2 ps-1">
-                <input type="number" class="form-control weight-setup" id="thickness8" name="thickness8" step="0.01"
-                  placeholder="ครั้งที่8..." required>
+                <input type="number" class="form-control weight-setup" id="thickness6" name="thickness6" step="0.01" placeholder="ครั้งที่6..." required>
                 <span class="input-group-text">mm.</span>
               </div>
             </div>
             <div class="row">
               <div class="col input-group my-2 pe-1">
-                <input type="number" class="form-control weight-setup" id="thickness9" name="thickness9" step="0.01"
-                  placeholder="ครั้งที่9..." required>
+                <input type="number" class="form-control weight-setup" id="thickness7" name="thickness7" step="0.01" placeholder="ครั้งที่7..." required>
                 <span class="input-group-text">mm.</span>
               </div>
               <div class="col input-group my-2 ps-1">
-                <input type="number" class="form-control weight-setup" id="thickness10" name="thickness10" step="0.01"
-                  placeholder="ครั้งที่10..." required>
+                <input type="number" class="form-control weight-setup" id="thickness8" name="thickness8" step="0.01" placeholder="ครั้งที่8..." required>
+                <span class="input-group-text">mm.</span>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col input-group my-2 pe-1">
+                <input type="number" class="form-control weight-setup" id="thickness9" name="thickness9" step="0.01" placeholder="ครั้งที่9..." required>
+                <span class="input-group-text">mm.</span>
+              </div>
+              <div class="col input-group my-2 ps-1">
+                <input type="number" class="form-control weight-setup" id="thickness10" name="thickness10" step="0.01" placeholder="ครั้งที่10..." required>
                 <span class="input-group-text">mm.</span>
               </div>
             </div>
           </div>
           <div class="modal-footer py-2">
             <button type="submit" class="btn btn-success">
-              <i class="fa-regular fa-share-from-square"></i>
+              <i class="fa-regular fa-share-from-square"></i> 
               บันทึก
             </button>
             <button type="reset" class="btn btn-danger" data-bs-dismiss="modal">
               <i class="fa-solid fa-xmark"></i>
-              ยกเลิก
+               ยกเลิก
             </button>
           </div>
         </form>
@@ -646,43 +919,41 @@
         </h3>
         <div class="m-4">
           <form id="form_remarks">
+            <input type="hidden" class="form-control" id="remarks_product" name="remarks_product">
+            <input type="hidden" class="form-control" id="remarks_lot" name="remarks_lot">
             <input type="hidden" class="form-control" id="remarks_url" name="remarks_url">
-            <input type="hidden" class="form-control" id="remarks_username" name="remarks_username">
-            <div class="modal-body px-4">
+            <div class="modal-body px-4 py-0">
               <div class="mb-3">
                 <label for="remark_timestamp" class="form-label">วันที่, เวลา</label>
                 <input type="text" class="form-control" id="remark_timestamp" name="remark_timestamp" readonly>
               </div>
               <div class="mb-3">
                 <label for="problem" class="form-label">ปัญหาที่พบ</label>
-                <input type="text" class="form-control" id="problem" name="problem" placeholder="ระบุปัญหาที่พบ..."
-                  required>
+                <textarea type="text" rows="15" class="form-control" id="problem" name="problem" placeholder="ระบุปัญหาที่พบ..." required></textarea>
               </div>
               <div class="mb-3">
                 <label for="causes" class="form-label">สาเหตุ</label>
-                <input type="text" class="form-control" id="causes" name="causes" placeholder="ระบุสาเหตุที่เกิด..."
-                  required>
+                <textarea type="text" rows="5" class="form-control" id="causes" name="causes" placeholder="ระบุสาเหตุที่เกิด..." required></textarea>
               </div>
               <div class="mb-3">
                 <label for="amendments" class="form-label">การแก้ไข</label>
-                <input type="text" class="form-control" id="amendments" name="amendments" placeholder="ระบุการแก้ไข..."
-                  required>
+                <textarea type="text" rows="5" class="form-control" id="amendments" name="amendments" placeholder="ระบุการแก้ไข..." required></textarea>
               </div>
-              <div class="mb-3">
+              <div class="mb-2">
                 <label for="note" class="form-label">หมายเหตุ</label>
-                <input type="text" class="form-control" id="note" name="note" placeholder="หมายเหตุ...">
+                <textarea type="text" rows="3" class="form-control" id="note" name="note" placeholder="หมายเหตุ..."></textarea>
               </div>
             </div>
         </div>
         <div class="modal-footer py-2">
           <button type="submit" class="btn btn-success">
-            <i class="fa-regular fa-share-from-square"></i>
-            บันทึก
-          </button>
+              <i class="fa-regular fa-share-from-square"></i> 
+              บันทึก
+            </button>
           <button type="reset" class="btn btn-danger" data-bs-dismiss="modal">
-            <i class="fa-solid fa-xmark"></i>
-            ยกเลิก
-          </button>
+              <i class="fa-solid fa-xmark"></i>
+               ยกเลิก
+            </button>
         </div>
         </form>
 
@@ -717,7 +988,7 @@
 
   <!-- logout -->
   <script>
-    $("#logout").on("click", function () {
+    $("#logout").on("click", function() {
       localStorage.clear();
       const el = document.createElement("a");
       el.href = <?= getUrl(); ?>;
@@ -735,10 +1006,10 @@
   <!--Js Bootstrap-->
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
     integrity="sha384-oBqDVmMz9ATKxIep9tiCxS/Z9fNfEXiDAYTujMAeBAsjFuCZSmKbSSUnQlmh/jp3" crossorigin="anonymous">
-    </script>
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js"
     integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous">
-    </script>
+  </script>
 </body>
 
 </html>

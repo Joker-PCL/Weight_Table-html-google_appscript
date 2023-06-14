@@ -1,12 +1,16 @@
-/* รายการอัพเดท
-  วันที่ 11/6/2022 เพิ่มหน้าค้นหารายการที่ Endjob ไปแล้ว และดึงข้อมูลไปแสดงหน้าเว็บ 
+/* รายการอัพเดท V4
+  เริ่มใช้งานวันที่ 26-05-2023
+  weight ipc เหลือการจัดเรียงหน้าที่ไม่ถูกต้อง code createTable
+
+  10/06/2023
+  เพิ่มฟังชั่นการตรวจสอบ กาารลงบันทึกข้อมูล remarks ก่อนจบการผลิต
 */
 
 // GetURL = url + ?page=WeightVariation
 function doGet(e) {
   htmlOutput = HtmlService.createTemplateFromFile('Index');
   return htmlOutput.evaluate()
-    .addMetaTag('viewport', 'width=device-width, height=device-height,initial-scale=0.6, minimum-scale=0.6, maximum-scale=1.5')
+    .addMetaTag('viewport', 'width=device-width, height=device-height,initial-scale=0.6, minimum-scale=0.6, maximum-scale=0.6')
     .setTitle("Weight Table")
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
@@ -14,26 +18,34 @@ function doGet(e) {
 // ตั้งค่า
 function globalVariables() {
   let Variables = {
+    // แฟ้มข้อมูลเวอร์ชั่นเก่า
+    folderIdIPC_OLD: "1RJx8vxspQTJR05GaTLtLqm1kBtfQYC0W",
+    folderIdROOM_OLD: "10JT2s9zd8pcmSj-kB2T5s-kFHlW58IE3",
+
     // ข้อมูลใน Main_Setup
     shUserList: "User_Password",      // ชีตข้อมูลรายชื่อพนักงาน
     shTabetList: "TabletID",          // ข้อมูล url เครื่องตอก
     shScaleList: "ScaleID",           // ชีตข้อมูลเครื่องชั่ง
     shProductNameList: "ProductNameList",   // ชีตข้อมูลรายชื่อยา
+    shAudit_log: "Audit_Log",         // ชีต audit trail
 
     shRemarks: "Remark",          // ชีต Remarks 
     shSetWeight: "Setting",        // ชีต ข้อมูลการตั้งค่าน้ำหนัก
 
     // ข้อมูลของระบบชั่ง 10 เม็ด
-    folderIdROOM: "10JT2s9zd8pcmSj-kB2T5s-kFHlW58IE3",  // ID โฟล์เดอร์แฟ้มข้อมูลน้ำหนัก 10 เม็ด
+    folderIdROOM: "1fR7bDwkDljhgxtuXqaGWmCn_O2anIKmg",  // ID โฟล์เดอร์แฟ้มข้อมูลน้ำหนัก 10 เม็ด
     shWeightROOM: "WEIGHT",           // ข้อมูลน้ำหนัก 10 เม็ด
-    setupRangeROOM: "A2:A14",         // ตำแหน่ง ข้อมูลการตั้งค่าน้ำหนัก 10 เม็ด
+    setupRangeROOM: "A2:A15",         // ตำแหน่ง ข้อมูลการตั้งค่าน้ำหนัก 10 เม็ด
 
     // ข้อมูลระบบชั่ง IPC
-    folderIdIPC: "1RJx8vxspQTJR05GaTLtLqm1kBtfQYC0W",  // ID โฟล์เดอร์แฟ้มข้อมูล IPC
+    folderIdIPC: "1ghyZVrFMlnNcxfOkGOd2HDvZ1_2b0La_",  // ID โฟล์เดอร์แฟ้มข้อมูล IPC
     shWeightIPC: "Weight Variation",  // ข้อมูลน้ำหนัก IPC
-    setupRangeIPC: "A4:A18",          // ตำแหน่ง ข้อมูลการตั้งค่าน้ำหนัก IPC
+    setupRangeIPC: "A4:A19",          // ตำแหน่ง ข้อมูลการตั้งค่าน้ำหนัก IPC
+    summaryRecordRangeIPC: "G2:G4",   // ตำแหน่ง สรุปผลน้ำหนัก IPC
     dataRangeIPC: ["A17:B68", "D17:E68", "G17:H68", "J17:K68"],      // ตำแหน่ง ข้อมูลการน้ำหนัก IPC
-    summaryRangeIPC: ["A69:B78", "D69:E78", "G69:H78", "J69:K78"]    // ตำแหน่ง ข้อมูลการน้ำหนัก IPC
+    summaryRangeIPC: ["A69:B78", "D69:E78", "G69:H78", "J69:K78"],   // ตำแหน่ง ข้อมูลการน้ำหนัก IPC
+    timestampRangeIPC: ["A17", "D17", "G17", "J17"], // ตำแหน่งบันทึกเวลา IPC
+    tabletDetailRangeIPC: ["B73", "E73", "H73", "K73"] // ตำแหน่งรายละเอียดเม็ดยา IPC
   }
 
   return Variables
@@ -54,36 +66,75 @@ function checkUser(username, password) {
   } else {
     return result
   };
+};
+
+// เปลียนชื่อชีต
+function renameSheetsInFolder() {
+  var folderId = "1RJx8vxspQTJR05GaTLtLqm1kBtfQYC0W"; // เปลี่ยนเป็น ID ของโฟลเดอร์ที่ต้องการ
+
+  var folder = DriveApp.getFolderById(folderId);
+  var files = folder.getFilesByType(MimeType.GOOGLE_SHEETS);
+
+  while (files.hasNext()) {
+    var file = files.next();
+    var spreadsheet = SpreadsheetApp.open(file);
+    var sheets = spreadsheet.getSheets();
+
+    for (var i = 0; i < sheets.length; i++) {
+      var sheet = sheets[i];
+      if (sheet.getName() === "DATA") {
+        console.log([file.getName(), sheet.getName()])
+        sheet.setName("Setting");
+      }
+    }
+  }
 }
 
 // ดึงข้อมูลชีตทั้งหมดที่อยู่ในฐานข้อมูล สร้าง dropdown list
 function getAllSheet(root) {
   let folderIdROOM = globalVariables().folderIdROOM;
-  let folderIdIPC = globalVariables().folderIdIPC;
-
   let folderROOM = DriveApp.getFolderById(folderIdROOM);
-  let folderIPC = DriveApp.getFolderById(folderIdIPC);
   let contentsROOM = folderROOM.getFiles();
+
+  let folderIdIPC = globalVariables().folderIdIPC;
+  let folderIPC = DriveApp.getFolderById(folderIdIPC);
   let contentsIPC = folderIPC.getFiles();
 
   let sheetListsROOM = [];
   let sheetListsIPC = [];
 
-  // if (root != "Operator") {
-  //   while (contentsROOM.hasNext()) {
-  //     let file = contentsROOM.next();
-  //     if (file.getMimeType() === "application/vnd.google-apps.spreadsheet") {
-  //       sheetListsROOM.push([file.getName(), file.getUrl()]);
-  //     };
-  //   };
+  const fileType = "application/vnd.google-apps.spreadsheet";
+  if (root != "Operator") {
+    while (contentsIPC.hasNext()) {
+      let file = contentsIPC.next();
+      if (file.getMimeType() === fileType) {
+        sheetListsIPC.push([file.getName(), file.getUrl()]);
+      };
+    };
 
-  //   while (contentsIPC.hasNext()) {
-  //     let file = contentsIPC.next();
-  //     if (file.getMimeType() === "application/vnd.google-apps.spreadsheet") {
-  //       sheetListsIPC.push([file.getName(), file.getUrl()]);
-  //     };
-  //   };
-  // };
+    while (contentsROOM.hasNext()) {
+      let file = contentsROOM.next();
+      if (file.getMimeType() === fileType) {
+        sheetListsROOM.push([file.getName(), file.getUrl()]);
+      };
+    };
+  };
+
+  sheetListsROOM = sheetListsROOM.sort((item1, item2) => {
+    const date1Parts = item1[0].split('_').pop().split('/');
+    const date2Parts = item2[0].split('_').pop().split('/');
+    const date1 = new Date(`${date1Parts[2]}-${date1Parts[1]}-${date1Parts[0]}`);
+    const date2 = new Date(`${date2Parts[2]}-${date2Parts[1]}-${date2Parts[0]}`);
+    return date1 - date2;
+  });
+
+  sheetListsIPC = sheetListsIPC.sort((item1, item2) => {
+    const date1Parts = item1[0].split('_').pop().split('/');
+    const date2Parts = item2[0].split('_').pop().split('/');
+    const date1 = new Date(`${date1Parts[2]}-${date1Parts[1]}-${date1Parts[0]}`);
+    const date2 = new Date(`${date2Parts[2]}-${date2Parts[1]}-${date2Parts[0]}`);
+    return date1 - date2;
+  });
 
   let ssMain = SpreadsheetApp.getActiveSpreadsheet();
   let shTabetList = ssMain.getSheetByName(globalVariables().shTabetList);
@@ -137,30 +188,97 @@ function getSheetUrl(tabletID) {
   return null;
 }
 
+// ดึงข้อมูล Audit_trail รายละเอียดการปฏิบัติงาน
+function getAuditTrail_data() {
+  let ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(globalVariables().shAudit_log);
+  let dataArr = sheet.getDataRange().getDisplayValues().slice(2);
+
+  return dataArr;
+};
+
+// บันทึกการปฏิบัติงาน audit trail
+function audit_trail(list, detail, username) {
+  let ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(globalVariables().shAudit_log);
+  let today = new Date().toLocaleString('en-GB', { timeZone: 'Asia/Jakarta' });
+
+  sheet.appendRow([today, list, detail, username]);
+}
+
+// บันทึก remarks
+function recordRemarks(form) {
+  let ss = SpreadsheetApp.openByUrl(form.remarks_url);
+  let sheet = ss.getSheetByName(globalVariables().shRemarks);
+  let data = sheet.getDataRange().getDisplayValues();
+
+  let dataList = [
+    form.remark_timestamp,
+    form.problem,
+    form.causes,
+    form.amendments,
+    form.note,
+    form.usernameLC
+  ];
+
+  // บันทึกการปฏิบัติงาน
+  let auditTrial_msg = `${form.remarks_product}\
+                      \n${form.remarks_lot}\
+                      \nปัญหาที่พบ: ${form.problem}\
+                      \nสาเหตุ: ${form.causes}\
+                      \nการแก้ไข: ${form.amendments}\
+                      \nหมายเหตุ: ${form.note}`;
+
+  audit_trail("ลงบันทึก remarks", auditTrial_msg, form.usernameLC);
+
+  for (let i = 2; i < data.length; i++) {
+    if (data[i][0] == form.remark_timestamp) {
+      sheet.getRange(i + 1, 1, 1, 6).setValues([dataList]);
+
+      return { result: true, dataList };
+    };
+  };
+
+  sheet.appendRow(dataList);
+  return { result: false, dataList };
+}
+
 // บันทึกการตั้งค่าน้ำหนัก
 function setupWeight(form) {
   let url = getSheetUrl(form.TabletID_form);
 
   let ssROOM = SpreadsheetApp.openByUrl(url.urlROOM);
-  let sheetROOM = ssROOM.getSheetByName(globalVariables().shSetWeightROOM);
+  let sheetROOM = ssROOM.getSheetByName(globalVariables().shSetWeight);
   sheetROOM.getRange(globalVariables().setupRangeROOM).setValues([
     [form.TabletID_form],
     [form.ScalesROOM_form],
     [form.ProductName_form],
     [form.Lot_form],
     [form.WeightRoom_form],
-    [form.MinRoom_form],
-    [form.MaxRoom_form],
     [form.MinRoomControl_form],
     [form.MaxRoomControl_form],
+    [form.MinDvtRoom_form],
+    [form.MaxDvtRoom_form],
     [form.PercentageRoom_form / 100],
     [form.MinThicknessRoom_form],
     [form.MaxThicknessRoom_form],
-    [form.AdminEdit_form]
+    [form.usernameLC],
+    ["xxxxx"]
+  ]);
+
+  sheetROOM.getRange(globalVariables().setupRangeROOM).setNumberFormats([
+    ['@'], ['@'], ['@'], ['@'],
+    ['0.000'], ['0.000'], ['0.000'], ['0.000'], ['0.000'],
+    ['0.00%'], ['0.00'], ['0.00'], ['@'], ['@']
   ]);
 
   let ssIPC = SpreadsheetApp.openByUrl(url.urlIPC);
   let sheetIPC = ssIPC.getSheetByName(globalVariables().shSetWeight);
+  let currentRange = sheetIPC.getRange("A3");
+  if (currentRange.getDisplayValue() == "xxxxx") {
+    currentRange.setValue("A19:B68");
+  };
+
   sheetIPC.getRange(globalVariables().setupRangeIPC).setValues([
     [form.TabletID_form],
     [form.ScalesIPC_form],
@@ -176,34 +294,22 @@ function setupWeight(form) {
     [form.MaxControlIPC_form],
     [form.MinDvtIPC_form],
     [form.MaxDvtIPC_form],
-    [form.AdminEdit_form]
+    [form.usernameLC],
+    ["xxxxx"]
   ]);
-}
 
-// บันทึก remarks
-function recordRemarks(form) {
-  let ss = SpreadsheetApp.openByUrl(form.remarks_url);
-  let sheet = ss.getSheetByName(globalVariables().shRemarks);
-  let data = sheet.getDataRange().getDisplayValues();
+  sheetIPC.getRange(globalVariables().setupRangeIPC).setNumberFormats([
+    ['@'], ['@'], ['@'], ['@'], ['@'], ['@'],
+    ['0.000'], ['0.00%'],
+    ['0.000'], ['0.000'], ['0.000'], ['0.000'], ['0.000'], ['0.000'], ['@'], ['@']
+  ]);
 
-  let dataList = [
-    form.remark_timestamp,
-    form.problem,
-    form.causes,
-    form.amendments,
-    form.note,
-    form.remarks_username
-  ];
+  // บันทึกการปฏิบัติงาน
+  let detail = `\ชื่อยา: ${form.ProductName_form}\
+                \nเลขที่ผลิต: ${form.Lot_form}\
+                \nเครื่องตอก: ${form.TabletID_form}`;
 
-  for (let i = 2; i < data.length; i++) {
-    if (data[i][0] == form.remark_timestamp) {
-      sheet.getRange(i + 1, 1, 1, 6).setValues([dataList]);
-      return { result: true, dataList };
-    };
-  };
-
-  sheet.appendRow(dataList);
-  return { result: false, dataList };
+  audit_trail("ตั้งค่าน้ำหนักยา", detail, form.usernameLC);
 }
 
 // แก้ไขฐานข้อมูลน้ำหนักยา
@@ -216,10 +322,10 @@ function addOrEditWeightDatabase(form) {
     form.ProductName_form,
     form.WeightRoom_form,
     form.PercentageRoom_form / 100,
-    form.MinRoom_form,
-    form.MaxRoom_form,
     form.MinRoomControl_form,
     form.MaxRoomControl_form,
+    form.MinDvtRoom_form,
+    form.MaxDvtRoom_form,
     form.MinThicknessRoom_form,
     form.MaxThicknessRoom_form,
     form.WeightIPC_form,
@@ -231,6 +337,10 @@ function addOrEditWeightDatabase(form) {
     form.MinControlIPC_form,
     form.MaxControlIPC_form
   ];
+
+  // บันทึกการปฏิบัติงาน
+  let detail = `\ชื่อยา: ${form.ProductName_form}`;
+  audit_trail("เพิ่ม/แก้ไข ฐานข้อมูลน้ำหนักยา", detail, form.usernameLC);
 
   for (let i = 2; i < producNameList.length; i++) {
     if (form.ProductName_form == producNameList[i][0]) {
@@ -250,13 +360,21 @@ function addOrEditUser(form) {
   let users = sheetUsers.getDataRange().getDisplayValues();
 
   let dataLists = [
-    form.rfid_input,
+    `'${form.rfid_input}`,
     form.employeeID_input,
     form.userNameTH_input,
     form.userNameEN,
     form.userPassword,
     form.userRoot
   ];
+
+  // บันทึกการปฏิบัติงาน
+  let detail = `\RFID: ${form.rfid_input}\
+                \nรหัสพนักงาน: ${form.employeeID_input}\
+                \nชื่อ-สกุล: ${form.userNameTH_input}\
+                \nสิทธิการใช้งาน: ${form.userRoot}`;
+
+  audit_trail("เพิ่ม/แก้ไข ข้อมูลผู้ใช้งาน", detail, form.usernameLC);
 
   for (let i = 2; i < users.length; i++) {
     if (form.rfid_input == users[i][0]) {
@@ -269,6 +387,40 @@ function addOrEditUser(form) {
   return dataLists;
 }
 
+// ลบรายชื่อพนักงาน
+function deleteUser(form) {
+  let ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheetUsers = ss.getSheetByName(globalVariables().shUserList);
+  let users = sheetUsers.getDataRange().getDisplayValues();
+
+  // บันทึกการปฏิบัติงาน
+  let detail = `\RFID: ${form.rfid_input}\
+                \nรหัสพนักงาน: ${form.employeeID_input}\
+                \nชื่อ-สกุล: ${form.userNameTH_input}\
+                \nสิทธิการใช้งาน: ${form.userRoot}`;
+
+  for (let i = 2; i < users.length; i++) {
+    if (form.rfid_input == users[i][0]) {
+      sheetUsers.deleteRow(i + 1);
+      audit_trail("ลบข้อมูลผู้ใช้งาน", detail, form.usernameLC); // บันทึกการปฏิบัติงาน
+    };
+  };
+}
+
+//********* ส่งไลน์
+function sendLineNotify(message) {
+  let token = "p9YWBiZrsUAk7Ef9d0hLTMMF2CxIaTnRopHaGcosM4q";
+  var options = {
+    "method": "post",
+    "payload": "message=" + message,
+    "headers": {
+      "Authorization": "Bearer " + token
+    }
+  };
+
+  UrlFetchApp.fetch("https://notify-api.line.me/api/notify", options);
+}
+
 // ดึงไฟล์ 
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
@@ -278,8 +430,6 @@ function getUrl() {
   let url = ScriptApp.getService().getUrl();
   return url;
 }
-
-
 
 
 
