@@ -73,6 +73,7 @@
     if(rootLC == "Admin") {
       auditTrail_record(); // แสดงข้อมูลรายละเอียดการปฏิบัติงาน
       updateSettingList(); // สร้าง DropdownList สำหรับการตั้งค่าทั้งหมด
+      root_setting_addChecker(); // ลงบันทึกตรวจสอบการตั้งค่า
       recordTableDetail_IPC(); // ลงบันทึกลักษณะของเม็ดยา
       root_remarks(); // ลงข้อมูล remarks
       root_addChecker(); // ลงชื่อผู้ตรวจเช็ค
@@ -95,13 +96,48 @@
       // root_addThickness(); // ลงค่าความแข็งของเม็ดยา
       $(".root-superuser").addClass("d-none"); // ซ่อนเมนูตาม class root-superuser
       $(".root-admin").addClass("d-none"); // ซ่อนเมนูตาม class root-admin
-    } else {
+    } else if(rootLC == "User") {
+      root_addChecker(); // ลงค่าความแข็งของเม็ดยา
       $(".root-superuser").addClass("d-none"); // ซ่อนเมนูตาม class root-superuser
       $(".root-admin").addClass("d-none"); // ซ่อนเมนูตาม class root-admin
+      $(".add-checker").removeClass("d-none");
     };    
   };
+
+
+  function menu_protection() {
+    const rootLC = localStorage.getItem("root");
+    // กำหนดสิทธิ์การใช้งาน
+    if(rootLC == "Superuser" || rootLC == "Admin") {
+      if(rootLC == "Admin") {
+        $("#weight_detail_room .btn-check-setting").removeClass("d-none");
+        $(".root-admin").removeClass("d-none");
+      } else if(rootLC == "Superuser") {
+        $(".root-superuser").removeClass("d-none");
+      };
+
+      // endjob แสดงเฉพาะ lot ปัจจุบัน
+      if($("#selectedMenu_room").val().includes("เครื่องตอก")) {
+        $("#endjob_room").removeClass("d-none");
+        $("#weight_room .add-checker").removeClass("d-none");
+        $(".table-title-remarks .add-remarks").removeClass("d-none"); 
+      }else{
+        $("#endjob_room").addClass("d-none");
+        $("#weight_detail_room .btn-check-setting").addClass("d-none");
+        $("#weight_room .add-checker").addClass("d-none");
+        $(".table-title-remarks .add-remarks").addClass("d-none");
+      };
+    }
+    else if(rootLC == "User") {
+      $("#weight_room .add-checker").removeClass("d-none");
+    }
+    else {
+      $(".root-superuser").addClass("d-none");
+      $(".root-admin").addClass("d-none");
+    };
+  };
 </script>
-  
+
 <!-- สร้างกราฟ-->
 <script type="text/javascript" src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
 <script>
@@ -189,9 +225,23 @@
               <li class="lh-lg">ช่วงน้ำหนักเฉลี่ยที่ยอมรับ ${setup[8]} - ${setup[9]} กรัม</li>
               <li class="lh-lg">ช่วงน้ำหนักเบี่ยงเบนที่ยอมรับ ${setup[10]} - ${setup[11]} กรัม</li>
               <li class="lh-lg">ช่วงน้ำหนักเบี่ยงเบนที่กฎหมายยอมรับ ${setup[12]} - ${setup[13]} กรัม</li>
-              ${setup[15]=="xxxxx"?"":`<li class="lh-lg">${setup[15]}</li>`}
+              <li class="lh-lg fw-bold check-setting-detail">
+                ตั้งค่าน้ำหนักโดย ${setup[14]} ${setup[15]=="xxxxx" ? "<span class='check-setting'></span>" : `ตรวจสอบการตั้งค่าโดย ${setup[15]}`}
               </li>
+              ${setup[16]=="xxxxx" ? "":`<li class="lh-lg fw-bold">${setup[16]}</li>`}
             </ul>
+          </div>
+          <div class="d-flex justify-content-center mb-5">
+            ${setup[15]=="xxxxx" ? 
+              `<button class="btn btn-danger btn-check-setting px-5 root-admin ${setup[14]=="xxxxx" ? 'd-none':''} "
+                type="button"
+                name="ipc"
+                data-type="IPC"
+                data-url="${dataObj.url}">
+                <i class="fa-solid fa-list-check"></i> ลงชื่อตรวจสอบการตั้งค่า
+              </button>`
+              : ""
+            }
           </div>
           <div class="summary-ipc d-grid justify-content-center">
           </div>`;
@@ -262,7 +312,7 @@
 
     // สร้างตาราง Remarks
     let dataTableRemarks = `<table id="weight_ipc_remarks" 
-          class="remarks table table-striped table-responsive" style="width: 100%">
+          class="remarks table table-responsive" style="width: 100%">
         <thead class='p-3 bg-primary text-white'>
           <tr>
               <th scope="col">วันที่/เวลา</th>
@@ -298,9 +348,9 @@
     
     // สรุปผลการชั่งน้ำหนัก
     $(document).ready(function () {
-      if(weight_temp_ipc) {
-        let summary_min = Math.min(...weight_temp_ipc);
-        let summary_max = Math.max(...weight_temp_ipc);
+      if(weight_temp_ipc.length > 0) {
+        let summary_min = Math.min(...weight_temp_ipc).toFixed(3);
+        let summary_max = Math.max(...weight_temp_ipc).toFixed(3);
         let summary_average = (weight_temp_ipc.reduce((acc, val) => acc + parseFloat(val), 0) / weight_temp_ipc.length).toFixed(3);
         $(".summary-ipc").html(`<h5 class="text-center lh-lg bg-success py-2 px-5 text-white rounded">
             <span class="fw-semibold text-decoration-underline">สรุปข้อมูลการชั่งน้ำหนักทั้งหมด</span>
@@ -332,9 +382,11 @@
           };   
           // endjob แสดงเฉพาะ lot ปัจจุบัน
           if($("#selectedMenu_ipc").val().includes("เครื่องตอก")) {
+            $("#weight_detail_ipc .btn-check-setting").removeClass("d-none");
             $("#endjob_ipc").removeClass("d-none");
             $(".add-remarks").removeClass("d-none");
           } else {
+            $("#weight_detail_ipc .btn-check-setting").addClass("d-none");
             $("#endjob_ipc").addClass("d-none");
             $(".add-remarks").addClass("d-none");
           };
@@ -422,7 +474,7 @@
                                 <td>
                                   <div class="data-control" 
                                     style="background-color:${colors[item][1]}">
-                                    ${data[1]}
+                                    ${parseFloat(data[1]).toFixed(3)}
                                   </div>
                                 </td>
                             </tr>`;
@@ -608,8 +660,23 @@
                 <li class="lh-lg">ช่วงน้ำหนัก 10 เม็ด ${setup[5]} - ${setup[6]} กรัม</li>
                 <li class="lh-lg">ช่วงน้ำหนักเบี่ยงเบนที่กฎหมายยอมรับ ${setup[7]} - ${setup[8]} กรัม</li>
                 <li class="lh-lg">ค่าความหนา(Thickness) ${setup[10]} - ${setup[11]} มิลลิเมตร(mm)</li>
-                ${setup[13]=="xxxxx"?"":`<li class="lh-lg">${setup[13]}</li>`}
+                <li class="lh-lg fw-bold check-setting-detail">
+                  ตั้งค่าน้ำหนักโดย ${setup[12]} ${setup[13]=="xxxxx" ? '<span class="check-setting"></span>' : `ตรวจสอบการตั้งค่าโดย ${setup[13]}`}
+                </li>
+                ${setup[14]=="xxxxx" ? "":`<li class="lh-lg fw-bold">${setup[14]}</li>`}
               </ul>
+            </div>
+            <div class="d-flex justify-content-center mb-5">
+              ${setup[13]=="xxxxx" ? 
+                `<button class="btn btn-danger btn-check-setting px-5 root-admin ${setup[12]=="xxxxx" ? 'd-none':''}"
+                  type="button"
+                  name="room"
+                  data-type="10 เม็ด"
+                  data-url="${dataObj.url}">
+                  <i class="fa-solid fa-list-check"></i> ลงชื่อตรวจสอบการตั้งค่า
+                </button>`
+                : ""
+              }
             </div>
             <div class="summary-room d-grid justify-content-center">
             </div>`;
@@ -620,7 +687,7 @@
               <tr>
                   <th rowspan="2">วันที่,เวลา</th>
                   <th colspan="10" style="font-size: 18px; position: relative;">ตารางบันทึกบันทึกค่าน้ำหนัก 10 เม็ด 2 ครั้งทุก 30 นาที
-                    <button type="button" class="btn btn-warning add-checker px-3 root-admin root-superuser" 
+                    <button type="button" class="btn btn-warning add-checker px-3 root-superuser root-admin d-none" 
                       style="position: absolute; top: 3px; right: 10px;">
                       <i class="fa-solid fa-stamp"></i>
                         ลงชื่อผู้ตรวจสอบ
@@ -698,7 +765,7 @@
           } else if (item > 8 && dataArray[9] != "-") {
             tickness_temp_room.push(d);
             if (dataObj.colors[index][item] != "#ffffff") {
-              dataTableTickness += `<td style="color:${dataObj.colors[index][item]}">${d}</td>`;
+              dataTableTickness += `<td><div class="tickness-control" style="background-color:${dataObj.colors[index][item]}">${d}</div></td>`;
             } else {
               dataTableTickness += `<td>${d}</td>`;
             };
@@ -721,7 +788,7 @@
 
       // สรุปผลการชั่งน้ำหนัก
       $(document).ready(function () {
-        if(weight_temp_room) {
+        if(weight_temp_room.length > 0) {
           let weight_summary_min = Math.min(...weight_temp_room).toFixed(3);
           let weight_summary_max = Math.max(...weight_temp_room).toFixed(3);
           let weight_summary_average = (weight_temp_room.reduce((acc, val) => acc + parseFloat(val), 0) / weight_temp_room.length).toFixed(3);
@@ -752,7 +819,7 @@
 
       /////** สร้างตาราง remarks **/////
       let dataTableRemarks = `<table id="weight_room_remarks" 
-            class="remarks table table-striped table-responsive" style="width: 100%">
+            class="remarks table table-responsive" style="width: 100%">
           <thead class='p-3 bg-primary text-white'>
             <tr>
                 <th scope="col">วันที่/เวลา</th>
@@ -793,27 +860,7 @@
           $(".table-div-room").removeClass("d-none");
           
           // กำหนดสิทธิ์การใช้งาน
-          if(rootLC == "Superuser" || rootLC == "Admin") {
-            if(rootLC == "Superuser") {
-              $(".root-superuser").removeClass("d-none");
-            } else if(rootLC == "Admin") {
-              $(".root-admin").removeClass("d-none");
-            };   
-            // endjob แสดงเฉพาะ lot ปัจจุบัน
-            if($("#selectedMenu_room").val().includes("เครื่องตอก")) {
-              $("#endjob_room").removeClass("d-none");
-              $("#weight_room .add-checker").removeClass("d-none");
-              $(".table-title-remarks .add-remarks").removeClass("d-none"); 
-            }else{
-              $("#endjob_room").addClass("d-none");
-              $("#weight_room .add-checker").addClass("d-none");
-              $(".table-title-remarks .add-remarks").addClass("d-none");
-            };
-          }
-          else {
-            $(".root-superuser").addClass("d-none");
-            $(".root-admin").addClass("d-none");
-          };
+          menu_protection();
         }
         else {
           $("#endjob_room").addClass("d-none");
@@ -871,11 +918,11 @@
 
   function createTable_AuditTrail(dataArr) {
     //** สร้างตารางข้อมูลน้ำหนักยา 10 เม็ด **//
-    let dataTable = `<table id="auditTrail_table" class="table table-striped table-responsive" style="width: 100%">
+    let dataTable = `<table id="auditTrail_table" class="table table-responsive" style="width: 100%">
           <thead class='p-3 bg-primary text-white'>
             <tr>
                 <th rowspan="2">วันที่,เวลา</th>
-                <th colspan="4" style="font-size: 18px; position: relative;">บันทึกการปฎิบัติงาน</th>
+                <th colspan="4">บันทึกการปฎิบัติงาน</th>
             </tr>
             <tr>
               <th scope="col">รายการ</th>
@@ -916,11 +963,11 @@
     let sheetNameLists_ROOM = [];
     
     sheetListsIPC.forEach(data => {
-      sheetNameLists_IPC.push(data[0]);
+      sheetNameLists_IPC.push(data[0].toUpperCase());
     });
 
     sheetListsROOM.forEach(data => {
-      sheetNameLists_ROOM.push(data[0]);
+      sheetNameLists_ROOM.push(data[0].toUpperCase());
     });
 
     $("#selectedMenu_ipc").autocomplete({
@@ -1035,7 +1082,7 @@
 
     // สร้าง DropdownList รายชื่อยา
     dataObj.producNameList.sort().forEach(data => {
-      producNameList.push(data[0]);
+      producNameList.push(data[0].toUpperCase());
     });
 
     // แสดงรายการยาอัตโนมัติเมื่อโฟกัส
@@ -1056,7 +1103,7 @@
     $("body").on("click", "#selected_productName li", function () {
       const el_val = $(this).text()
       let dataLists = dataObj.producNameList.find(data => {
-        return el_val == data[0];
+        return el_val.toUpperCase() == data[0].toUpperCase();
       });
 
       // console.log(dataLists)
@@ -1232,6 +1279,16 @@
         abnormal_tablet(remarkEl_temp, timestamp, "10 เม็ด");
       };
     });
+
+    // textarea เพิ่มบรรทัดใหม่หลังทุกๆ 20 คำ **จำกัดความยาวของข้อความ**
+    // $("body").on("keyup", "textarea", function () {
+    //   let text = $(this).val();
+
+    //   // เพิ่มบรรทัดใหม่หลังทุกๆ 20 คำ
+    //   if (text.length % 35 === 0 && event.key != "Backspace") {
+    //     $(this).val(text += "\n");
+    //   }
+    // });
   };
 
   // ลงบันทึก remarks เมื่อพบลักษณะเม็ดยาผิดปกติ และแจ้งเตือนไลน์
@@ -1245,11 +1302,13 @@
     const message_alert = `\n🔰ระบบเครื่องชั่ง ${type}\
     \n🔰${tabletID} \
     \n🔰${productName} \
-    \n🔰${lot}\n`;
+    \n🔰${lot}
+    \n❌`;
 
-    const message = `❌พบเม็ดยาลักษณะ: "ผิดปกติ" \nในช่วงเวลาการชั่ง: ${timestamp} \nผู้ปฏิบัติงาน: ${username}`;
+    const message = `พบเม็ดยาลักษณะ: "ผิดปกติ" \nในช่วงเวลาการชั่ง: ${timestamp} \nผู้ปฏิบัติงาน: ${username}`;
 
     let form = {
+      remarks_type: type,
       remarks_product: productName,
       remarks_lot: lot,
       remarks_url: url,
@@ -1276,11 +1335,11 @@
     }).withFailureHandler(failed).recordRemarks(form);
   };
   
-  // ลงชื่อผู้ตรวจสอบ
+  // ลงชื่อผู้ตรวจสอบตารางน้ำหนักยา 10 เม็ด
   function root_addChecker() {
     const username = localStorage.getItem("username");
     const root = localStorage.getItem("root");
-    if(root == "Superuser" || root == "Admin") {
+    if(root == "Superuser" || root == "Admin" || root == "User") {
       $("body").on("click", "table#weight_room .add-checker", function() {
         const el = $(this);
         const url = el.parents(".page").find(".openFile").attr("href");
@@ -1290,6 +1349,42 @@
           el.find("i").removeClass("fa-bounce");
           success_save();
         }).withFailureHandler(failed).addChecker(url, username);
+      });
+    };
+  };
+
+  // ลงชื่อผู้ตรวจสอบการตั้งค่าน้ำหนักยา
+  function root_setting_addChecker() {
+    const username = localStorage.getItem("username");
+    const root = localStorage.getItem("root");
+    if(root == "Admin") {
+      $("body").on("click", ".btn-check-setting", function() {
+        const el = $(this);
+        const url = el.attr("data-url");
+        const type = el.attr("data-type");
+        const product = el.parents(".page").find(".product-name").html();
+        const lot = el.parents(".page").find(".lot-name").html();
+        const tabletID = el.parents(".page").find(".tablet-name").html();
+        el.find("i").addClass("fa-bounce");
+        el.prop('disabled', true);
+
+        const detail = { type, product, lot, tabletID };
+        if(type == "IPC") {
+          google.script.run.withSuccessHandler((res)=>{
+            el.parents(".page").find(".check-setting").html(`ตรวจสอบการตั้งค่าโดย ${username}`);
+            el.find("i").removeClass("fa-bounce");
+            el.fadeOut(1000);
+            success_save();
+          }).withFailureHandler(failed).setting_addChecker_ipc(url, username, detail);
+        }
+        else if(type == "10 เม็ด") {
+          google.script.run.withSuccessHandler((res)=>{
+            el.parents(".page").find(".check-setting").html(`ตรวจสอบการตั้งค่าโดย ${username}`);
+            el.find("i").removeClass("fa-bounce");
+            el.fadeOut(1000);
+            success_save();
+          }).withFailureHandler(failed).setting_addChecker_room(url, username, detail);
+        };
       });
     };
   };
@@ -1337,8 +1432,11 @@
         };
       });
 
-      // ตรวจพบว่ายังไม่ได้ลงข้อมูลครบถ้วน
-      if (remarks_state) {
+      // ตรวจพบว่ายังได้ลงข้อมูลครบถ้วนหรือไม่
+      let checkSetting_state = el.parents('.page').find('.check-setting-detail').html();
+      if(!checkSetting_state.includes("ตรวจสอบการตั้งค่าโดย")) {
+        failed("ยังไม่ได้ลงชื่อตรวจสอบการตั้งค่า!", "ลงชื่อตรวจสอบการตั้งค่าให้เรียบร้อยก่อน จบการผลิต");
+      } else if (remarks_state) {
         failed("ยังไม่ได้ลงข้อมูล Remarks!", "ลงข้อมูล remarks ให้เรียบร้อยก่อน จบการผลิต");
       } else {
         endjob(type, url, username, el);
@@ -1393,8 +1491,10 @@
         const url = el.parents(".page").find(".openFile").attr("href");
         const date_time = new Date().toLocaleString('en-GB', { hour12: false });
 
+        const type = el.parents(".page").find(".weightTable-type").val();
         const product = el.parents(".page").find(".product-name").html();
         const lot = el.parents(".page").find(".lot-name").html();
+        $("#remarks_type").val(type);
         $("#remarks_product").val(product);
         $("#remarks_lot").val(lot);
 
@@ -1414,10 +1514,12 @@
         const amendments = el.find('td').eq(3).text();
         const note = el.find('td').eq(4).text();
 
+        const type = el.parents(".page").find(".weightTable-type").val();
         const product = el.parents(".page").find(".product-name").html();
         const lot = el.parents(".page").find(".lot-name").html();
-
+        
         if(list_selected.includes("เครื่องตอก")) {
+          $("#remarks_type").val(type);
           $("#remarks_product").val(product);
           $("#remarks_lot").val(lot);
           $("#date_time").val(date_time);
@@ -1467,7 +1569,7 @@
 </script>
 
 <!-- ลงบันทึกค่าความหนาของเม็ดยา -->
-<script> 
+<script>
   let thickness_modal, thicknessEl_temp;
   $(document).ready(function() {
     thickness_modal = new bootstrap.Modal('#thickness_modal');

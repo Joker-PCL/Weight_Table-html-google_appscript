@@ -22,6 +22,33 @@ function getCurrentData_ROOM(url) {
   }
 }
 
+// ลงชื่อผู้ตรวจสอบการตั้งค่า
+function setting_addChecker_room(url, username, detail) {
+  let ss = SpreadsheetApp.openByUrl(url);
+  let sheet = ss.getSheetByName(globalVariables().shSetWeight);
+
+  sheet.getRange(globalVariables().checkSetupRangeROOM).setValue(username);
+  
+  // บันทึกการปฏิบัติงาน
+  let auditTrial_msg = `ระบบเครื่องชั่ง ${detail.type}\
+                      \n${detail.product}\
+                      \n${detail.lot}\
+                      \n${detail.tabletID}`;
+
+  audit_trail("ลงชื่อตรวจสอบการตั้งค่า", auditTrial_msg, username);
+
+  const timeStamp = new Date().toLocaleString('en-GB', { timeZone: 'Asia/Jakarta' });
+  const approval_msg = `🌈ระบบเครื่องชั่ง ${detail.type}
+    \n🔰${detail.tabletID}\
+    \n🔰${detail.lot}\
+    \n🔰${detail.product}
+    \n⪼ ตรวจสอบการตั้งค่าโดย\
+    \n⪼ คุณ ${username}\
+    \n⪼ ${timeStamp}`;
+
+  sendLineNotify(approval_msg, globalVariables().approval_token);
+}
+
 // บันทึกลัษณะของเม็ดยา
 function recodeCharacteristics(url, date_time, value) {
   let ss = SpreadsheetApp.openByUrl(url);
@@ -83,7 +110,7 @@ function endJob_ROOM(url, username) {
   let lot = shSetWeight.getRange('A5').getDisplayValue();
 
   // บันทึกคนที่กด ENDJOB
-  shSetWeight.getRange('A15').setValue("จบการผลิตโดย " + username + " วันที่ " + today);
+  shSetWeight.getRange(globalVariables().checkEndjobRangeROOM).setValue("จบการผลิตโดย " + username + " วันที่ " + today);
   
   // บันทึกการปฏิบัติงาน
   let detail = `ระบบเครื่องชั่ง: 10 เม็ด\
@@ -95,7 +122,7 @@ function endJob_ROOM(url, username) {
 
   // จัดเก็บข้อมูลไปยังโฟล์เดอร์
   let folder = DriveApp.getFolderById(globalVariables().folderIdROOM);
-  let newSh = ss.copy(tabletID + "_" + productName + "_LOT" + lot + "_" + date);
+  let newSh = ss.copy(`${lot}_${productName}_${tabletID}_${date}`);
   let shID = newSh.getId(); // get newSheetID
   let file = DriveApp.getFileById(shID);
 
@@ -114,7 +141,7 @@ function endJob_ROOM(url, username) {
   
   ss.getSheetByName(globalVariables().shWeightROOM).getRange("A5:S").clearContent();
   ss.getSheetByName(globalVariables().shRemarks).getRange("A3:F").clearContent();
-  ss.getSheetByName(globalVariables().shSetWeight).getRange("A3:A15").setValue("xxxxx");
+  ss.getSheetByName(globalVariables().shSetWeight).getRange("A3:A16").setValue("xxxxx");
 
   return getCurrentData_ROOM(url);
 };

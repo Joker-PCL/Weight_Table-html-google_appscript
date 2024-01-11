@@ -46,16 +46,40 @@ function getCurrentData_IPC(url) {
   return { result, setupWeightIPC, remarks, url };
 }
 
+// ลงชื่อผู้ตรวจสอบการตั้งค่า
+function setting_addChecker_ipc(url, username, detail) {
+  let ss = SpreadsheetApp.openByUrl(url);
+  let sheet = ss.getSheetByName(globalVariables().shSetWeight);
+
+  sheet.getRange(globalVariables().checkSetupRangeIPC).setValue(username);
+
+  // บันทึกการปฏิบัติงาน
+  let auditTrial_msg = `ระบบเครื่องชั่ง ${detail.type}\
+                      \n${detail.product}\
+                      \n${detail.lot}\
+                      \n${detail.tabletID}`;
+
+  audit_trail("ลงชื่อตรวจสอบการตั้งค่า", auditTrial_msg, username);
+
+  const timeStamp = new Date().toLocaleString('en-GB', { timeZone: 'Asia/Jakarta' });
+  const approval_msg = `🌈ระบบเครื่องชั่ง ${detail.type}
+    \n🔰${detail.tabletID}\
+    \n🔰${detail.lot}\
+    \n🔰${detail.product}
+    \n⪼ ตรวจสอบการตั้งค่าโดย\
+    \n⪼ คุณ ${username}\
+    \n⪼ ${timeStamp}`;
+
+  sendLineNotify(approval_msg, globalVariables().approval_token);
+}
+
 // บันทึกสรุปข้อมูลการชั่งน้ำหนัก
 function summaryRecord_IPC(url, min, max, average) {
-  SpreadsheetApp.openByUrl(url)
-  .getSheetByName(globalVariables().shSetWeight)
-  .getRange(globalVariables().summaryRecordRangeIPC)
-  .setValues([
-    [min],
-    [max],
-    [average]
-  ]);
+  let ss = SpreadsheetApp.openByUrl(url);
+  let sheet = ss.getSheetByName(globalVariables().shSetWeight);
+  let ranges = sheet.getRange(globalVariables().summaryRecordRangeIPC);
+  ranges.setValues([[min], [max], [average]]);
+  ranges.setNumberFormats([['0.000'], ['0.000'], ['0.000']]);
 }
 
 // บันทึกลัษณะของเม็ดยา
@@ -86,7 +110,7 @@ function endJob_IPC(url, username) {
   let lot = shSetWeight.getRange('A8').getDisplayValue();
 
   // บันทึกคนที่กด ENDJOB
-  shSetWeight.getRange('A19').setValue("จบการผลิตโดย " + username + " วันที่ " + today);
+  shSetWeight.getRange(globalVariables().checkEndjobRangeIPC).setValue("จบการผลิตโดย " + username + " วันที่ " + today);
 
   // บันทึกการปฏิบัติงาน
   let detail = `ระบบเครื่องชั่ง: IPC\
@@ -98,12 +122,12 @@ function endJob_IPC(url, username) {
 
   // จัดเก็บข้อมูลไปยังโฟล์เดอร์
   let folder = DriveApp.getFolderById(globalVariables().folderIdIPC);
-  let newSh = ss.copy(tabletID + "_" + productName + "_LOT" + lot + "_" + date);
+  let newSh = ss.copy(`${lot}_${productName}_${tabletID}_IPC_${date}`);
   let shID = newSh.getId(); // get newSheetID
   let file = DriveApp.getFileById(shID);
 
   folder.addFile(file); // ย้ายไฟล์ไปยังแฟ้มเก็บข้อมูล
-  
+
   // ลบชีตที่ไม่ใช่ชีตหลักออก
   let shName = ss.getSheets();
   for (i = 0; i < shName.length; i++) {
@@ -119,7 +143,7 @@ function endJob_IPC(url, username) {
   ss.getSheetByName(globalVariables().shWeightIPC).getRangeList(["B73:B78", "E73:E78", "H73:H78", "K73:K78"]).clearContent();
   ss.getSheetByName(globalVariables().shRemarks).getRange("A3:F").clearContent();
   ss.getSheetByName(globalVariables().shSetWeight).getRange("A3").setValue("A19:B68");
-  ss.getSheetByName(globalVariables().shSetWeight).getRange("A5:A19").setValue("xxxxx");
+  ss.getSheetByName(globalVariables().shSetWeight).getRange("A5:A20").setValue("xxxxx");
   ss.getSheetByName(globalVariables().shSetWeight).getRange("G2:G4").setValue("xxxxx");
 
   return getCurrentData_IPC(url);

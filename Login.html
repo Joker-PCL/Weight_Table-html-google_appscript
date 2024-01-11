@@ -1,105 +1,105 @@
 <div id="loading_page" class="d-none">
-    <section class="loader">
-      <div class="slider" style="--i:0">
-      </div>
-      <div class="slider" style="--i:1">
-      </div>
-      <div class="slider" style="--i:2">
-      </div>
-      <div class="slider" style="--i:3">
-      </div>
-      <div class="slider" style="--i:4">
-      </div>
-    </section>
-  </div>
-  
-  <!-- form login -->
-  <div id="login_page" class="login-box d-none">
-    <h2 class="text-white text-center mb-5">WEIGHT VARIATION</h2>
-    <div id="login">
-      <div class="user-box">
-        <input type="text" id="username" name="username" autocomplete="off" required>
-        <label>Username</label>
-      </div>
-      <div class="user-box">
-        <input type="password" id="password" name="password" autocomplete="new-password" required>
-        <label>Password</label>
-      </div>
-      <button id="submit" class="btn btn-outline-info">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          LOGIN
-        </button>
-      <button type="button" id="submit_wait" class="btn btn-outline-warning d-none" disabled>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <i class="fa-solid fa-fade">WAIT...</i>
-        </button>
-  
-      <center class="my-2 py-2 bg-danger rounded invisible" id="login-alert">
-        <i class="text-white fa-solid fa-triangle-exclamation fa-fade fa-1x"></i>
-      </center>
+  <section class="loader">
+    <div class="slider" style="--i:0">
     </div>
+    <div class="slider" style="--i:1">
+    </div>
+    <div class="slider" style="--i:2">
+    </div>
+    <div class="slider" style="--i:3">
+    </div>
+    <div class="slider" style="--i:4">
+    </div>
+  </section>
+</div>
+
+<!-- form login -->
+<div id="login_page" class="login-box d-none">
+  <h2 class="text-white text-center mb-5">WEIGHT VARIATION</h2>
+  <div id="login">
+    <div class="user-box">
+      <input type="text" id="username" name="username" autocomplete="off" required>
+      <label>Username</label>
+    </div>
+    <div class="user-box">
+      <input type="password" id="password" name="password" autocomplete="new-password" required>
+      <label>Password</label>
+    </div>
+    <button id="submit" class="btn btn-outline-info">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        LOGIN
+      </button>
+    <button type="button" id="submit_wait" class="btn btn-outline-warning d-none" disabled>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <i class="fa-solid fa-fade">WAIT...</i>
+      </button>
+
+    <center class="my-2 py-2 bg-danger rounded invisible" id="login-alert">
+      <i class="text-white fa-solid fa-triangle-exclamation fa-fade fa-1x"></i>
+    </center>
   </div>
-  
-  <script>
-    $(document).ready(function() {
-      let usernameLC = localStorage.getItem("username");
-      let passwordLC = localStorage.getItem("password");
-  
-      if(usernameLC && passwordLC){
-        $("#loading_page").removeClass("d-none");
-        loginCheck(usernameLC, passwordLC);
+</div>
+
+<script>
+  $(document).ready(function() {
+    let usernameLC = localStorage.getItem("username");
+    let passwordLC = localStorage.getItem("password");
+
+    if(usernameLC && passwordLC){
+      $("#loading_page").removeClass("d-none");
+      loginCheck(usernameLC, passwordLC);
+    }
+    else {
+      $("#login_page").removeClass("d-none");
+    };
+
+    $('#login').on('click', '#submit', function() {
+      // event.preventDefault();
+      let username = $("#username").val();
+      let password = $("#password").val();
+
+      if(username && password) {
+        $("#submit").addClass("d-none");
+        $("#submit_wait").removeClass("d-none");
+        loginCheck(username, password);
       }
       else {
-        $("#login_page").removeClass("d-none");
+        $("#login-alert i").html(" กรุณากรอกข้อมูลให้ครบ");
+        $("#login-alert").removeClass("invisible");
+
+        setTimeout(()=>{$("#login-alert").addClass("invisible")}, 3000);
       };
-  
-      $('#login').on('click', '#submit', function() {
-        // event.preventDefault();
-        let username = $("#username").val();
-        let password = $("#password").val();
-  
-        if(username && password) {
-          $("#submit").addClass("d-none");
-          $("#submit_wait").removeClass("d-none");
-          loginCheck(username, password);
-        }
-        else {
-          $("#login-alert i").html(" กรุณากรอกข้อมูลให้ครบ");
-          $("#login-alert").removeClass("invisible");
-  
-          setTimeout(()=>{$("#login-alert").addClass("invisible")}, 3000);
-        };
-      });
     });
-  
-    function loginCheck(username, password){
-      google.script.run.withSuccessHandler(result => {
-        $("#submit").removeClass("d-none");
-        $("#submit_wait").addClass("d-none");
-        $("#loading_page").addClass("d-none");
-        if(result){
-          localStorage.setItem("username", result.user);
-          localStorage.setItem("password", result.pass);
-          localStorage.setItem("root", result.root);
-          $("#main_page").removeClass("d-none");
-          $("#login_page").addClass("d-none");
-          $("#username").val("");
-          $("#password").val("");
-          firstConnect(); // เข้าสู่หน้าหลัก  
-          $('form').append(`<input type="hidden" class="usernameLC" name="usernameLC" value="${username}">`);    
-        }else{
-          $("#login_page").removeClass("d-none");
-          $("#login-alert i").html(" รหัสผ่านไม่ถูกต้อง");
-          $("#login-alert").removeClass("invisible");
-          setTimeout(()=>{$("#login-alert").addClass("invisible")}, 3000);
-          localStorage.clear();
-        }
-      }).checkUser(username, password);
-    };
-  </script>
+  });
+
+  function loginCheck(username, password){
+    google.script.run.withSuccessHandler(result => {
+      $("#submit").removeClass("d-none");
+      $("#submit_wait").addClass("d-none");
+      $("#loading_page").addClass("d-none");
+      if(result){
+        localStorage.setItem("username", result.user);
+        localStorage.setItem("password", result.pass);
+        localStorage.setItem("root", result.root);
+        $("#main_page").removeClass("d-none");
+        $("#login_page").addClass("d-none");
+        $("#username").val("");
+        $("#password").val("");
+        firstConnect(); // เข้าสู่หน้าหลัก  
+        $('form').append(`<input type="hidden" class="usernameLC" name="usernameLC" value="${username}">`);    
+      }else{
+        $("#login_page").removeClass("d-none");
+        $("#login-alert i").html(" รหัสผ่านไม่ถูกต้อง");
+        $("#login-alert").removeClass("invisible");
+        setTimeout(()=>{$("#login-alert").addClass("invisible")}, 3000);
+        localStorage.clear();
+      }
+    }).checkUser(username, password);
+  };
+</script>

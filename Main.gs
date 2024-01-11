@@ -2,7 +2,7 @@
   เริ่มใช้งานวันที่ 26-05-2023
   weight ipc เหลือการจัดเรียงหน้าที่ไม่ถูกต้อง code createTable
 
-  10/06/2023
+  10-06-2023
   เพิ่มฟังชั่นการตรวจสอบ กาารลงบันทึกข้อมูล remarks ก่อนจบการผลิต
 */
 
@@ -18,6 +18,12 @@ function doGet(e) {
 // ตั้งค่า
 function globalVariables() {
   let Variables = {
+    // Shortened links
+    shortenedLinks: "https://bit.ly/WeightTableV4",
+    // Line token
+    alert_token: "p9YWBiZrsUAk7Ef9d0hLTMMF2CxIaTnRopHaGcosM4q",
+    approval_token: "lYlhqcenm4d8Vq4VJOYO2T8VHh0tbaW7oSrsJU9tm7f",
+
     // แฟ้มข้อมูลเวอร์ชั่นเก่า
     folderIdIPC_OLD: "1RJx8vxspQTJR05GaTLtLqm1kBtfQYC0W",
     folderIdROOM_OLD: "10JT2s9zd8pcmSj-kB2T5s-kFHlW58IE3",
@@ -35,12 +41,16 @@ function globalVariables() {
     // ข้อมูลของระบบชั่ง 10 เม็ด
     folderIdROOM: "1fR7bDwkDljhgxtuXqaGWmCn_O2anIKmg",  // ID โฟล์เดอร์แฟ้มข้อมูลน้ำหนัก 10 เม็ด
     shWeightROOM: "WEIGHT",           // ข้อมูลน้ำหนัก 10 เม็ด
-    setupRangeROOM: "A2:A15",         // ตำแหน่ง ข้อมูลการตั้งค่าน้ำหนัก 10 เม็ด
+    setupRangeROOM: "A2:A16",         // ตำแหน่ง ข้อมูลการตั้งค่าน้ำหนัก 10 เม็ด
+    checkSetupRangeROOM: "A15",       // ตำแหน่ง ลงชื่อตรวจสอบการตั้งค่าน้ำหนัก 10 เม็ด
+    checkEndjobRangeROOM: "A16",       // ตำแหน่ง ลงชื่อ endjob การตั้งค่าน้ำหนัก 10 เม็ด
 
     // ข้อมูลระบบชั่ง IPC
     folderIdIPC: "1ghyZVrFMlnNcxfOkGOd2HDvZ1_2b0La_",  // ID โฟล์เดอร์แฟ้มข้อมูล IPC
     shWeightIPC: "Weight Variation",  // ข้อมูลน้ำหนัก IPC
-    setupRangeIPC: "A4:A19",          // ตำแหน่ง ข้อมูลการตั้งค่าน้ำหนัก IPC
+    setupRangeIPC: "A4:A20",          // ตำแหน่ง ข้อมูลการตั้งค่าน้ำหนัก IPC
+    checkSetupRangeIPC: "A19",       // ตำแหน่ง ลงชื่อตรวจสอบการตั้งค่าน้ำหนัก IPC
+    checkEndjobRangeIPC: "A20",       // ตำแหน่ง ลงชื่อ endjob การตั้งค่าน้ำหนัก IPC
     summaryRecordRangeIPC: "G2:G4",   // ตำแหน่ง สรุปผลน้ำหนัก IPC
     dataRangeIPC: ["A17:B68", "D17:E68", "G17:H68", "J17:K68"],      // ตำแหน่ง ข้อมูลการน้ำหนัก IPC
     summaryRangeIPC: ["A69:B78", "D69:E78", "G69:H78", "J69:K78"],   // ตำแหน่ง ข้อมูลการน้ำหนัก IPC
@@ -67,28 +77,6 @@ function checkUser(username, password) {
     return result
   };
 };
-
-// เปลียนชื่อชีต
-function renameSheetsInFolder() {
-  var folderId = "1RJx8vxspQTJR05GaTLtLqm1kBtfQYC0W"; // เปลี่ยนเป็น ID ของโฟลเดอร์ที่ต้องการ
-
-  var folder = DriveApp.getFolderById(folderId);
-  var files = folder.getFilesByType(MimeType.GOOGLE_SHEETS);
-
-  while (files.hasNext()) {
-    var file = files.next();
-    var spreadsheet = SpreadsheetApp.open(file);
-    var sheets = spreadsheet.getSheets();
-
-    for (var i = 0; i < sheets.length; i++) {
-      var sheet = sheets[i];
-      if (sheet.getName() === "DATA") {
-        console.log([file.getName(), sheet.getName()])
-        sheet.setName("Setting");
-      }
-    }
-  }
-}
 
 // ดึงข้อมูลชีตทั้งหมดที่อยู่ในฐานข้อมูล สร้าง dropdown list
 function getAllSheet(root) {
@@ -141,8 +129,8 @@ function getAllSheet(root) {
 
   let dataLists = shTabetList.getDataRange().getDisplayValues().slice(1);
   dataLists.reverse().forEach(data => {
-    sheetListsROOM.push([`เครื่องตอก ${data[0]} (lot. ปัจจุบัน)`, data[3]]);
-    sheetListsIPC.push([`เครื่องตอก ${data[0]} (lot. ปัจจุบัน)`, data[5]])
+    sheetListsROOM.push([`เครื่องตอก ${data[0]} (LOT. ปัจจุบัน)`, data[3]]);
+    sheetListsIPC.push([`เครื่องตอก ${data[0]} (LOT. ปัจจุบัน)`, data[5]])
   });
 
   return { sheetListsROOM, sheetListsIPC };
@@ -204,6 +192,7 @@ function audit_trail(list, detail, username) {
   let today = new Date().toLocaleString('en-GB', { timeZone: 'Asia/Jakarta' });
 
   sheet.appendRow([today, list, detail, username]);
+  sheet.getRange(1, 1, sheet.getMaxRows(), sheet.getMaxColumns()).setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
 }
 
 // บันทึก remarks
@@ -222,7 +211,8 @@ function recordRemarks(form) {
   ];
 
   // บันทึกการปฏิบัติงาน
-  let auditTrial_msg = `${form.remarks_product}\
+  let auditTrial_msg = `ระบบเครื่องชั่ง ${form.remarks_type}\
+                      \n${form.remarks_product}\
                       \n${form.remarks_lot}\
                       \nปัญหาที่พบ: ${form.problem}\
                       \nสาเหตุ: ${form.causes}\
@@ -240,6 +230,7 @@ function recordRemarks(form) {
   };
 
   sheet.appendRow(dataList);
+  sheet.getRange(1, 1, sheet.getMaxRows(), sheet.getMaxColumns()).setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
   return { result: false, dataList };
 }
 
@@ -263,13 +254,14 @@ function setupWeight(form) {
     [form.MinThicknessRoom_form],
     [form.MaxThicknessRoom_form],
     [form.usernameLC],
+    ["xxxxx"],
     ["xxxxx"]
   ]);
 
   sheetROOM.getRange(globalVariables().setupRangeROOM).setNumberFormats([
     ['@'], ['@'], ['@'], ['@'],
     ['0.000'], ['0.000'], ['0.000'], ['0.000'], ['0.000'],
-    ['0.00%'], ['0.00'], ['0.00'], ['@'], ['@']
+    ['0.00%'], ['0.00'], ['0.00'], ['@'], ['@'], ['@']
   ]);
 
   let ssIPC = SpreadsheetApp.openByUrl(url.urlIPC);
@@ -295,13 +287,14 @@ function setupWeight(form) {
     [form.MinDvtIPC_form],
     [form.MaxDvtIPC_form],
     [form.usernameLC],
+    ["xxxxx"],
     ["xxxxx"]
   ]);
 
   sheetIPC.getRange(globalVariables().setupRangeIPC).setNumberFormats([
     ['@'], ['@'], ['@'], ['@'], ['@'], ['@'],
     ['0.000'], ['0.00%'],
-    ['0.000'], ['0.000'], ['0.000'], ['0.000'], ['0.000'], ['0.000'], ['@'], ['@']
+    ['0.000'], ['0.000'], ['0.000'], ['0.000'], ['0.000'], ['0.000'], ['@'], ['@'], ['@']
   ]);
 
   // บันทึกการปฏิบัติงาน
@@ -310,6 +303,16 @@ function setupWeight(form) {
                 \nเครื่องตอก: ${form.TabletID_form}`;
 
   audit_trail("ตั้งค่าน้ำหนักยา", detail, form.usernameLC);
+
+  const approval_msg = `🌈ขออนุมัติการตั้งค่าน้ำหนักยา
+    \n🔰เครื่องตอก: ${form.TabletID_form}\
+    \n🔰เลขที่ผลิต: ${form.Lot_form} \
+    \n🔰ชื่อยา: ${form.ProductName_form} \
+    \n⪼ กดลิงค์ด้านล่างเพื่อดำเนินการ \
+    \n ${globalVariables().shortenedLinks}`;
+
+  sendLineNotify(approval_msg, globalVariables().approval_token);
+
 }
 
 // แก้ไขฐานข้อมูลน้ำหนักยา
@@ -343,7 +346,7 @@ function addOrEditWeightDatabase(form) {
   audit_trail("เพิ่ม/แก้ไข ฐานข้อมูลน้ำหนักยา", detail, form.usernameLC);
 
   for (let i = 2; i < producNameList.length; i++) {
-    if (form.ProductName_form == producNameList[i][0]) {
+    if (form.ProductName_form.toUpperCase() == producNameList[i][0].toUpperCase()) {
       sheet.getRange(i + 1, 1, 1, sheet.getLastColumn()).setValues([dataLists]);
       return dataLists;
     };
@@ -408,8 +411,11 @@ function deleteUser(form) {
 }
 
 //********* ส่งไลน์
-function sendLineNotify(message) {
-  let token = "p9YWBiZrsUAk7Ef9d0hLTMMF2CxIaTnRopHaGcosM4q";
+function sendLineNotify(message, token) {
+  if (!token) {
+    token = globalVariables().alert_token;
+  }
+  
   var options = {
     "method": "post",
     "payload": "message=" + message,
@@ -426,8 +432,10 @@ function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
+// url iframe
 function getUrl() {
-  let url = ScriptApp.getService().getUrl();
+  // let url = ScriptApp.getService().getUrl();
+  const url = globalVariables().shortenedLinks;
   return url;
 }
 

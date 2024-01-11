@@ -21,6 +21,8 @@
   <!-- sweetalert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css" />
+
   <!-- datatable CSS -->
   <?!= include('DataTable_CSS'); ?>
   <?!= include('CSS'); ?>
@@ -140,6 +142,7 @@
 
     <!-- ตารางข้อมูลน้ำหนักยา IPC -->
     <div id="page2" class="page container-xl mt-4 d-none">
+      <input type="hidden" class="weightTable-type" value="IPC">
       <h3 class="text-center text-decoration-underline">
         การควบคุมน้ำหนักเฉลี่ย (AVERAGE WEIGHT)
       </h3>
@@ -197,7 +200,7 @@
           <button type="button" class="btn btn-warning add-remarks px-3 root-admin root-superuser" 
             style="position: absolute; top: 3px; right: 10px;">
             <i class="fa-solid fa-plus"></i>
-              ลงปันทึก
+              ลงบันทึก
           </button>
         </div>
         <div id="remarks_ipc_div" class="table-div-remarks mb-3"></div>
@@ -206,6 +209,7 @@
 
     <!-- ตารางข้อมูลน้ำหนักยา 10 เม็ด -->
     <div id="page3" class="page container-xl mt-4 d-none">
+      <input type="hidden" class="weightTable-type" value="10 เม็ด">
       <h3 class="text-center text-decoration-underline mb-4">
         ตารางข้อมูลน้ำหนักยา 10 เม็ด
       </h3>
@@ -260,7 +264,7 @@
           <button type="button" class="btn btn-warning add-remarks px-3 root-admin root-superuser" 
             style="position: absolute; top: 3px; right: 10px;">
             <i class="fa-solid fa-plus"></i>
-              ลงปันทึก
+              ลงบันทึก
           </button>
         </div>
         <div id="remarks_room_div" class="table-div-remarks mb-3"></div>
@@ -919,6 +923,7 @@
         </h3>
         <div class="m-4">
           <form id="form_remarks">
+            <input type="hidden" class="form-control" id="remarks_type" name="remarks_type">
             <input type="hidden" class="form-control" id="remarks_product" name="remarks_product">
             <input type="hidden" class="form-control" id="remarks_lot" name="remarks_lot">
             <input type="hidden" class="form-control" id="remarks_url" name="remarks_url">
@@ -1000,8 +1005,8 @@
   <?!= include('JS'); ?>
 
   <!--Js Datatable-->
-  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
+  <!-- <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script> -->
 
   <!--Js Bootstrap-->
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
